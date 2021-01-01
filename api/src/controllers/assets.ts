@@ -9,6 +9,8 @@ import { Transformation } from '../types/assets';
 import storage from '../storage';
 import { PayloadService, AssetsService } from '../services';
 import useCollection from '../middleware/use-collection';
+import env from '../env';
+import ms from 'ms';
 
 const router = Router();
 
@@ -80,9 +82,9 @@ router.get(
 			if (transformation.key && allKeys.includes(transformation.key as string) === false)
 				throw new InvalidQueryException(`Key "${transformation.key}" isn't configured.`);
 			return next();
-		} else if (assetSettings.storage_asset_transform === 'shortcut') {
+		} else if (assetSettings.storage_asset_transform === 'presets') {
 			if (allKeys.includes(transformation.key as string)) return next();
-			throw new InvalidQueryException(`Only configured shortcuts can be used in asset generation.`);
+			throw new InvalidQueryException(`Only configured presets can be used in asset generation.`);
 		} else {
 			if (transformation.key && systemKeys.includes(transformation.key as string)) return next();
 			throw new InvalidQueryException(`Dynamic asset generation has been disabled for this project.`);
@@ -111,6 +113,8 @@ router.get(
 			res.removeHeader('Content-Disposition');
 		}
 
+		const access = !!req.accountability?.role ? 'private' : 'public';
+		res.setHeader('Cache-Control', `${access}, max-age=${ms(env.ASSETS_CACHE_TTL as string)}`);
 		stream.pipe(res);
 	})
 );
