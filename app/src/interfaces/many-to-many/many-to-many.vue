@@ -19,7 +19,7 @@
 			<template v-for="header in tableHeaders" v-slot:[`item.${header.value}`]="{ item }">
 				<render-display
 					:key="header.value"
-					:value="get(item, header.value)"
+					:value="get(item, header.value, relationInfo.junctionCollection)"
 					:display="header.field.display"
 					:options="header.field.displayOptions"
 					:interface="header.field.interface"
@@ -70,7 +70,7 @@
 import { defineComponent, ref, computed, watch, PropType, toRefs } from '@vue/composition-api';
 import DrawerItem from '@/views/private/components/drawer-item';
 import DrawerCollection from '@/views/private/components/drawer-collection';
-import { get } from 'lodash';
+import get from '@/utils/get-nested-field';
 
 import useActions from './use-actions';
 import useRelation from './use-relation';

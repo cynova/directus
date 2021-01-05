@@ -56,12 +56,13 @@ export default defineComponent({
 				.map((part) => {
 					if (part.startsWith('{{') === false) return part;
 
-					const fieldKey = part.replace(/{{/g, '').replace(/}}/g, '').trim();
+					let fieldKey = part.replace(/{{/g, '').replace(/}}/g, '').trim();
 					const field: Field | null = fieldsStore.getField(props.collection, fieldKey);
 
 					// Instead of crashing when the field doesn't exist, we'll render a couple question
 					// marks to indicate it's absence
 					if (!field) return null;
+					fieldKey = fieldKey.split('translations.').join('translations.0.');
 
 					// Try getting the value from the item, return some question marks if it doesn't exist
 					const value = get(props.item, fieldKey);
@@ -71,7 +72,6 @@ export default defineComponent({
 					if (field.meta?.display === null) return value;
 
 					const displayInfo = displays.value.find((display) => display.id === field.meta?.display);
-
 					// If used display doesn't exist in the current project, return raw value
 					if (!displayInfo) return value;
 

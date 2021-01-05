@@ -241,11 +241,14 @@ export const useFieldsStore = createStore({
 			const parts = fields.split('.');
 			const relationshipForField = relationshipStore
 				.getRelationsForField(collection, parts[0])
-				?.find((relation: Relation) => relation.many_field === parts[0]);
+				?.find((relation: Relation) => relation.many_field === parts[0] || relation.one_field === parts[0]);
 
 			if (relationshipForField === undefined) return false;
 
-			const relatedCollection = relationshipForField.one_collection;
+			const relatedCollection =
+				relationshipForField.many_field === parts[0]
+					? relationshipForField.one_collection
+					: relationshipForField.many_collection;
 			parts.shift();
 			const relatedField = parts.join('.');
 			return this.getField(relatedCollection, relatedField);

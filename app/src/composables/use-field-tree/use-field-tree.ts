@@ -21,8 +21,7 @@ export default function useFieldTree(collection: Ref<string>, inject?: { fields:
 				return shown;
 			})
 			.map((field: Field) => ({
-				name: field.name,
-				field: field.field,
+				...field,
 				key: parentPath ? `${parentPath}.${field.field}` : field.field,
 			}));
 
@@ -35,12 +34,27 @@ export default function useFieldTree(collection: Ref<string>, inject?: { fields:
 					(relation.many_collection === collection && relation.many_field === field.field) ||
 					(relation.one_collection === collection && relation.one_field === field.field)
 			);
+			const _r = relations.filter(
+				(relation: Relation) =>
+					(relation.many_collection === collection && relation.many_field === field.field) ||
+					(relation.one_collection === collection && relation.one_field === field.field)
+			);
 			if (!relation) continue;
 			const relationType = getRelationType({ relation, collection, field: field.field });
 
 			if (relationType === 'm2o') {
 				field.children = parseLevel(
 					relation.one_collection,
+					parentPath ? `${parentPath}.${field.field}` : field.field,
+					level + 1
+				);
+			}
+			if (field.key === 'category.translations') {
+				console.log('___key');
+			}
+			if (relationType === 'o2m') {
+				field.children = parseLevel(
+					relation.many_collection,
 					parentPath ? `${parentPath}.${field.field}` : field.field,
 					level + 1
 				);

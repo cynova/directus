@@ -39,13 +39,7 @@
 					</v-checkbox>
 				</draggable>
 
-				<v-checkbox
-					v-for="field in availableFields.filter((field) => fields.includes(field.field) === false)"
-					v-model="fields"
-					:key="field.field"
-					:value="field.field"
-					:label="field.name"
-				/>
+				<v-field-select :collection="collection" v-model="fields" hide-value class="add-field" addable-parent />
 			</div>
 		</portal>
 
@@ -87,7 +81,7 @@
 			<template v-for="header in tableHeaders" v-slot:[`item.${header.value}`]="{ item }">
 				<render-display
 					:key="header.value"
-					:value="item[header.value]"
+					:value="get(item, header.value, collection)"
 					:display="header.field.display"
 					:options="header.field.displayOptions"
 					:interface="header.field.interface"
@@ -113,12 +107,7 @@
 
 					<div v-if="loading === false && items.length >= 25" class="per-page">
 						<span>{{ $t('per_page') }}</span>
-						<v-select
-							@input="limit = +$event"
-							:value="`${limit}`"
-							:items="['25', '50', '100', '250']"
-							inline
-						/>
+						<v-select @input="limit = +$event" :value="`${limit}`" :items="['25', '50', '100', '250']" inline />
 					</div>
 				</div>
 			</template>
@@ -157,6 +146,9 @@ import i18n from '../../lang';
 import adjustFieldsForDisplays from '../../utils/adjust-fields-for-displays';
 import hideDragImage from '../../utils/hide-drag-image';
 import useShortcut from '../../composables/use-shortcut';
+import get from '@/utils/get-nested-field';
+import adjustFieldsForTranslations from '@/utils/adjust-fields-for-translations';
+import useFieldTree from '@/composables/use-field-tree';
 
 type layoutOptions = {
 	widths?: {
@@ -222,7 +214,28 @@ export default defineComponent({
 		const _searchQuery = useSync(props, 'searchQuery', emit);
 
 		const { collection, searchQuery } = toRefs(props);
-		const { info, primaryKeyField, fields: fieldsInCollection, sortField } = useCollection(collection);
+		const { info, primaryKeyField, sortField } = useCollection(collection);
+
+		const { tree } = useFieldTree(collection);
+
+		function flatten(tree) {
+			const flat = [];
+			function walk(tree, baseName) {
+				tree.forEach((item) => {
+					flat.push({ ...item, field: item.key, name: baseName ? `${baseName} ${item.name}` : item.name });
+					if (item.children) {
+						walk(item.children, baseName ? `${baseName} ${item.name}` : item.name);
+					}
+				});
+			}
+			walk(tree);
+			return flat;
+		}
+
+		const fieldsInCollection = computed(() => {
+			console.log(tree);
+			return flatten(tree.value);
+		});
 
 		const { sort, limit, page, fields, fieldsWithRelational } = useItemOptions();
 
@@ -304,6 +317,7 @@ export default defineComponent({
 			refresh,
 			resetPresetAndRefresh,
 			availableFields,
+			get,
 		};
 
 		async function resetPresetAndRefresh() {
@@ -370,8 +384,7 @@ export default defineComponent({
 						if (Array.isArray(_layoutQuery.value.fields)) return _layoutQuery.value.fields;
 					}
 
-					const fields =
-						_layoutQuery.value?.fields || fieldsInCollection.value.slice(0, 4).map(({ field }) => field);
+					const fields = _layoutQuery.value?.fields || fieldsInCollection.value.slice(0, 4).map(({ field }) => field);
 
 					return fields;
 				},
@@ -383,7 +396,9 @@ export default defineComponent({
 				},
 			});
 
-			const fieldsWithRelational = computed(() => adjustFieldsForDisplays(fields.value, props.collection));
+			const fieldsWithRelational = computed(() =>
+				adjustFieldsForDisplays(adjustFieldsForTranslations(fields.value, props.collection), props.collection)
+			);
 
 			return { sort, limit, page, fields, fieldsWithRelational };
 		}
@@ -416,7 +431,7 @@ export default defineComponent({
 			const activeFields = computed<Field[]>({
 				get() {
 					return fields.value
-						.map((key) => fieldsInCollection.value.find((field) => field.field === key))
+						.map((key) => fieldsInCollection.value.find((field) => field.key === key))
 						.filter((f) => f) as Field[];
 				},
 				set(val) {
@@ -428,7 +443,7 @@ export default defineComponent({
 				get() {
 					return activeFields.value.map((field) => ({
 						text: field.name,
-						value: field.field,
+						value: field.key,
 						width: localWidths.value[field.field] || _layoutOptions.value?.widths?.[field.field] || null,
 						field: {
 							display: field.meta?.display,
@@ -439,8 +454,8 @@ export default defineComponent({
 							field: field.field,
 						},
 						sortable:
-							['json', 'o2m', 'm2o', 'file', 'files', 'alias', 'presentation'].includes(field.type) ===
-							false,
+							['json', 'o2m', 'm2o', 'file', 'files', 'alias', 'presentation'].includes(field.type) === false &&
+							!field.key.includes('.'),
 					}));
 				},
 				set(val) {
@@ -630,5 +645,12 @@ export default defineComponent({
 
 .reset-preset {
 	margin-top: 24px;
+}
+
+.add-field {
+	margin-top: 8px;
+	::v-deep .v-button {
+		margin: auto;
+	}
 }
 </style>
