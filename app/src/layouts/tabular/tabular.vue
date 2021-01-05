@@ -149,6 +149,7 @@ import useShortcut from '../../composables/use-shortcut';
 import get from '@/utils/get-nested-field';
 import adjustFieldsForTranslations from '@/utils/adjust-fields-for-translations';
 import useFieldTree from '@/composables/use-field-tree';
+import { FieldTree } from '@/composables/use-field-tree/types';
 
 type layoutOptions = {
 	widths?: {
@@ -218,13 +219,13 @@ export default defineComponent({
 
 		const { tree } = useFieldTree(collection);
 
-		function flatten(tree) {
-			const flat = [];
-			function walk(tree, baseName) {
+		function flatten(tree: FieldTree[]) {
+			const flat: FieldTree[] = [];
+			function walk(tree: FieldTree[], baseName: string | undefined = undefined) {
 				tree.forEach((item) => {
 					flat.push({ ...item, field: item.key, name: baseName ? `${baseName} ${item.name}` : item.name });
 					if (item.children) {
-						walk(item.children, baseName ? `${baseName} ${item.name}` : item.name);
+						walk(item.children, baseName ? `${baseName} ${item.name}` : `${item.name}`);
 					}
 				});
 			}
@@ -232,8 +233,7 @@ export default defineComponent({
 			return flat;
 		}
 
-		const fieldsInCollection = computed(() => {
-			console.log(tree);
+		const fieldsInCollection = computed<FieldTree[]>(() => {
 			return flatten(tree.value);
 		});
 
@@ -428,11 +428,11 @@ export default defineComponent({
 				};
 			}, 350);
 
-			const activeFields = computed<Field[]>({
+			const activeFields = computed<FieldTree[]>({
 				get() {
 					return fields.value
 						.map((key) => fieldsInCollection.value.find((field) => field.key === key))
-						.filter((f) => f) as Field[];
+						.filter((f) => f) as FieldTree[];
 				},
 				set(val) {
 					fields.value = val.map((field) => field.field);

@@ -1,5 +1,5 @@
 import { useFieldsStore, useRelationsStore } from '@/stores';
-import { Field } from '@/types/';
+import { Field, Relation } from '@/types/';
 
 const fieldsStore = useFieldsStore();
 const relationsStore = useRelationsStore();
@@ -12,12 +12,12 @@ export default function adjustFieldsForTranslations(fields: readonly string[], p
 
 		for (let i = 1; i < path.length; i++) {
 			const partialKey = path.slice(0, i).join('.');
-			const field: Field = fieldsStore.getField(parentCollection, partialKey);
+			const field: any = fieldsStore.getField(parentCollection, partialKey);
 
 			if (!field) continue;
 
 			if (field.type === 'translations') {
-				const relations = relationsStore.getRelationsForField(field.collection, field.field);
+				const relations: Relation[] = relationsStore.getRelationsForField(field.collection, field.field);
 				const translationsRelation = relations.find(
 					(relation) => relation.one_collection === field.collection && relation.one_field === field.field
 				);

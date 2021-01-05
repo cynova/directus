@@ -1,8 +1,7 @@
 import { TranslateResult } from 'vue-i18n';
+import { Field } from '@/types';
 
-export type FieldTree = {
-	field: string;
-	name: string | TranslateResult;
+export interface FieldTree extends Field {
 	key: string;
 	children?: FieldTree[];
-};
+}

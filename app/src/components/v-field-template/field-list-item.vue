@@ -47,10 +47,10 @@ export default defineComponent({
 			default: false,
 		},
 	},
-	setup() {
+	setup(props, { emit }) {
 		function addParent() {
-			if (this.addableParent) {
-				this.$emit('add', `${this.parent ? this.parent + '.' : ''}${this.field.field}`);
+			if (props.addableParent) {
+				emit('add', `${props.parent ? props.parent + '.' : ''}${props.field.field}`);
 			}
 		}
 		return { formatTitle, addParent };
