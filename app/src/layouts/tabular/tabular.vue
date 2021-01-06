@@ -147,7 +147,6 @@ import adjustFieldsForDisplays from '../../utils/adjust-fields-for-displays';
 import hideDragImage from '../../utils/hide-drag-image';
 import useShortcut from '../../composables/use-shortcut';
 import get from '@/utils/get-nested-field';
-import adjustFieldsForTranslations from '@/utils/adjust-fields-for-translations';
 import useFieldTree from '@/composables/use-field-tree';
 import { FieldTree } from '@/composables/use-field-tree/types';
 
@@ -396,9 +395,7 @@ export default defineComponent({
 				},
 			});
 
-			const fieldsWithRelational = computed(() =>
-				adjustFieldsForDisplays(adjustFieldsForTranslations(fields.value, props.collection), props.collection)
-			);
+			const fieldsWithRelational = computed(() => adjustFieldsForDisplays(fields.value, props.collection));
 
 			return { sort, limit, page, fields, fieldsWithRelational };
 		}

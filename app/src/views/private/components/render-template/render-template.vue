@@ -22,7 +22,7 @@
 <script lang="ts">
 import { defineComponent, PropType, computed } from '@vue/composition-api';
 import { useFieldsStore } from '@/stores';
-import { get } from 'lodash';
+import get from '@/utils/get-nested-field';
 import { Field } from '@/types';
 import { getDisplays } from '@/displays';
 import ValueNull from '@/views/private/components/value-null';
@@ -56,16 +56,15 @@ export default defineComponent({
 				.map((part) => {
 					if (part.startsWith('{{') === false) return part;
 
-					let fieldKey = part.replace(/{{/g, '').replace(/}}/g, '').trim();
+					const fieldKey = part.replace(/{{/g, '').replace(/}}/g, '').trim();
 					const field: Field | null = fieldsStore.getField(props.collection, fieldKey);
 
 					// Instead of crashing when the field doesn't exist, we'll render a couple question
 					// marks to indicate it's absence
 					if (!field) return null;
-					fieldKey = fieldKey.split('translations.').join('translations.0.');
 
 					// Try getting the value from the item, return some question marks if it doesn't exist
-					const value = get(props.item, fieldKey);
+					const value = get(props.item, fieldKey, props.collection);
 					if (value === undefined) return null;
 
 					// If no display is configured, we can render the raw value

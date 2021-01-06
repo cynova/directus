@@ -78,6 +78,7 @@ import usePreview from './use-preview';
 import useEdit from './use-edit';
 import useSelection from './use-selection';
 import useSort from './use-sort';
+import adjustFieldsForDisplays from '@/utils/adjust-fields-for-displays';
 
 export default defineComponent({
 	components: { DrawerItem, DrawerCollection },
@@ -120,6 +121,10 @@ export default defineComponent({
 
 		const { junction, junctionCollection, relation, relationCollection, relationInfo } = useRelation(collection, field);
 
+		const adjustedFields = computed(() => {
+			return adjustFieldsForDisplays(fields.value, junctionCollection.value.collection);
+		});
+
 		const {
 			deleteItem,
 			getUpdatedItems,
@@ -130,9 +135,9 @@ export default defineComponent({
 			getJunctionFromRelatedId,
 		} = useActions(value, relationInfo, emitter);
 
-		const { tableHeaders, items, loading, error } = usePreview(
+		const { tableHeaders: tableHeadersWithHidden, items, loading, error } = usePreview(
 			value,
-			fields,
+			adjustedFields,
 			sortField,
 			relationInfo,
 			getNewSelectedItems,
@@ -153,7 +158,11 @@ export default defineComponent({
 
 		const { stageSelection, selectModalActive, selectionFilters } = useSelection(value, items, relationInfo, emitter);
 
-		const { sort, sortItems, sortedItems } = useSort(sortField, fields, items, emitter);
+		const { sort, sortItems, sortedItems } = useSort(sortField, adjustedFields, items, emitter);
+
+		const tableHeaders = computed(() => {
+			return tableHeadersWithHidden.value.filter((header) => fields.value.includes(header.value));
+		});
 
 		return {
 			junction,

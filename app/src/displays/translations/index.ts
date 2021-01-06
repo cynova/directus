@@ -27,7 +27,10 @@ export default defineDisplay(({ i18n }) => ({
 
 		if (!relatedCollection) return [];
 
-		const fields = adjustFieldsForDisplays(getFieldsFromTemplate(options.template), relatedCollection);
+		const fields = adjustFieldsForDisplays(
+			getFieldsFromTemplate(options.template, relatedCollection),
+			relatedCollection
+		);
 
 		const languagesCodeField = useLanguagesCodeField(collection, field);
 

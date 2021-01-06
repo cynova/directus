@@ -382,11 +382,11 @@ export default defineComponent({
 				const titleSubtitleFields: string[] = [];
 
 				if (title.value) {
-					titleSubtitleFields.push(...getFieldsFromTemplate(title.value));
+					titleSubtitleFields.push(...getFieldsFromTemplate(title.value, props.collection));
 				}
 
 				if (subtitle.value) {
-					titleSubtitleFields.push(...getFieldsFromTemplate(subtitle.value));
+					titleSubtitleFields.push(...getFieldsFromTemplate(subtitle.value, props.collection));
 				}
 
 				return [...fields, ...adjustFieldsForDisplays(titleSubtitleFields, props.collection)];

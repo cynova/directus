@@ -21,10 +21,7 @@
 				<v-icon class="drag-handle" name="drag_handle" @click.stop v-if="sortField" />
 				<span class="collection">{{ collections[item[anyRelation.one_collection_field]].name }}:</span>
 				<span
-					v-if="
-						typeof item[anyRelation.many_field] === 'number' ||
-						typeof item[anyRelation.many_field] === 'string'
-					"
+					v-if="typeof item[anyRelation.many_field] === 'number' || typeof item[anyRelation.many_field] === 'string'"
 				>
 					{{ item[anyRelation.many_field] }}
 				</span>
@@ -200,12 +197,8 @@ export default defineComponent({
 				return relationsStore.getRelationsForField(props.collection, props.field);
 			});
 
-			const o2mRelation = computed(
-				() => relationsForField.value.find((relation) => relation.one_collection !== null)!
-			);
-			const anyRelation = computed(
-				() => relationsForField.value.find((relation) => relation.one_collection === null)!
-			);
+			const o2mRelation = computed(() => relationsForField.value.find((relation) => relation.one_collection !== null)!);
+			const anyRelation = computed(() => relationsForField.value.find((relation) => relation.one_collection === null)!);
 
 			return { relationsForField, o2mRelation, anyRelation };
 		}
@@ -231,9 +224,7 @@ export default defineComponent({
 				const keys: Record<string, string> = {};
 
 				for (const collection of Object.values(collections.value)) {
-					keys[collection.collection] = fieldsStore.getPrimaryKeyFieldForCollection(
-						collection.collection
-					).field!;
+					keys[collection.collection] = fieldsStore.getPrimaryKeyFieldForCollection(collection.collection).field!;
 				}
 
 				return keys;
@@ -244,8 +235,7 @@ export default defineComponent({
 
 				for (const collection of Object.values(collections.value)) {
 					const primaryKeyField = fieldsStore.getPrimaryKeyFieldForCollection(collection.collection);
-					templates[collection.collection] =
-						collection.meta?.display_template || `{{${primaryKeyField.field}}}`;
+					templates[collection.collection] = collection.meta?.display_template || `{{${primaryKeyField.field}}}`;
 				}
 
 				return templates;
@@ -292,9 +282,7 @@ export default defineComponent({
 						? val[anyRelation.value.many_field][primaryKeys.value[collection]]
 						: val[anyRelation.value.many_field];
 
-					const item = relatedItemValues.value[collection]?.find(
-						(item) => item[primaryKeys.value[collection]] == key
-					);
+					const item = relatedItemValues.value[collection]?.find((item) => item[primaryKeys.value[collection]] == key);
 
 					// When this item is created new and it has a uuid / auto increment id, there's no key to lookup
 					if (key && item) {
@@ -399,11 +387,10 @@ export default defineComponent({
 							// Don't attempt fetching anything if there's no keys to fetch
 							if (relatedKeys.length === 0) return Promise.resolve({ data: { data: [] } } as any);
 
-							const fields = getFieldsFromTemplate(templates.value[collection]);
+							const fields = getFieldsFromTemplate(templates.value[collection], collection);
 
 							// Make sure to always fetch the primary key, so we can match that with the value
-							if (fields.includes(primaryKeys.value[collection]) === false)
-								fields.push(primaryKeys.value[collection]);
+							if (fields.includes(primaryKeys.value[collection]) === false) fields.push(primaryKeys.value[collection]);
 
 							return api.get(getEndpoint(collection), {
 								params: {

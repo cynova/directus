@@ -19,7 +19,7 @@
 			<template v-for="header in tableHeaders" v-slot:[`item.${header.value}`]="{ item }">
 				<render-display
 					:key="header.value"
-					:value="get(item, header.value)"
+					:value="get(item, header.value, relatedCollection.collection)"
 					:display="header.field.display"
 					:options="header.field.displayOptions"
 					:interface="header.field.interface"
@@ -74,8 +74,9 @@ import DrawerCollection from '@/views/private/components/drawer-collection';
 import { Filter, Field } from '@/types';
 import { Header, Sort } from '@/components/v-table/types';
 import { isEqual, sortBy } from 'lodash';
-import { get } from 'lodash';
+import get from '@/utils/get-nested-field';
 import { unexpectedError } from '@/utils/unexpected-error';
+import adjustFieldsForDisplays from '@/utils/adjust-fields-for-displays';
 
 export default defineComponent({
 	components: { DrawerItem, DrawerCollection },
@@ -272,12 +273,14 @@ export default defineComponent({
 					const pkField = relatedPrimaryKeyField.value.field;
 
 					const fields = [...(props.fields.length > 0 ? props.fields : getDefaultFields())];
+					const adjustedFields = adjustFieldsForDisplays(fields, relatedCollection.value.collection);
 
-					if (fields.includes(pkField) === false) {
-						fields.push(pkField);
+					if (adjustedFields.includes(pkField) === false) {
+						adjustedFields.push(pkField);
 					}
 
-					if (props.sortField !== null && fields.includes(props.sortField) === false) fields.push(props.sortField);
+					if (props.sortField !== null && adjustedFields.includes(props.sortField) === false)
+						adjustedFields.push(props.sortField);
 
 					try {
 						const endpoint = relatedCollection.value.collection.startsWith('directus_')
@@ -291,7 +294,7 @@ export default defineComponent({
 						if (primaryKeys && primaryKeys.length > 0) {
 							const response = await api.get(endpoint, {
 								params: {
-									fields: fields,
+									fields: adjustedFields,
 									[`filter[${pkField}][_in]`]: primaryKeys.join(','),
 								},
 							});

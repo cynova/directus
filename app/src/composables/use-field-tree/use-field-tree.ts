@@ -49,9 +49,7 @@ export default function useFieldTree(collection: Ref<string>, inject?: { fields:
 					level + 1
 				);
 			}
-			if (field.key === 'category.translations') {
-				console.log('___key');
-			}
+
 			if (relationType === 'o2m') {
 				field.children = parseLevel(
 					relation.many_collection,
