@@ -125,7 +125,7 @@
 
 			<v-form
 				ref="form"
-				:disabled="isNew ? createAllowed === false : updateAllowed === false"
+				:disabled="isNew ? false : updateAllowed === false"
 				:fields="formFields"
 				:loading="loading"
 				:initial-values="item"
@@ -563,6 +563,7 @@ export default defineComponent({
 
 	.user-box-content {
 		flex-grow: 1;
+		overflow: hidden;
 
 		.v-skeleton-loader {
 			width: 175px;
@@ -592,10 +593,22 @@ export default defineComponent({
 		.location {
 			color: var(--foreground-subdued);
 		}
+
+		.name {
+			white-space: nowrap;
+		}
+
+		.location {
+			display: none;
+		}
 	}
 
 	@include breakpoint(small) {
 		height: 172px;
+
+		.user-box-content .location {
+			display: block;
+		}
 	}
 }
 </style>

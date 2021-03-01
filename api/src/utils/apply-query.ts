@@ -8,7 +8,12 @@ import validate from 'uuid-validate';
 
 export default function applyQuery(collection: string, dbQuery: QueryBuilder, query: Query, schema: SchemaOverview) {
 	if (query.sort) {
-		dbQuery.orderBy(query.sort);
+		dbQuery.orderBy(
+			query.sort.map((sort) => ({
+				...sort,
+				column: `${collection}.${sort.column}`,
+			}))
+		);
 	}
 
 	if (typeof query.limit === 'number') {
@@ -295,7 +300,7 @@ export async function applySearch(
 function getFilterPath(key: string, value: Record<string, any>) {
 	const path = [key];
 
-	if (Object.keys(value)[0].startsWith('_') === true) {
+	if (typeof Object.keys(value)[0] === 'string' && Object.keys(value)[0].startsWith('_') === true) {
 		return path;
 	}
 

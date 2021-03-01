@@ -90,6 +90,7 @@ field_presentation: Presentation & Aliases
 field_file: Single File
 field_files: Multiple Files
 field_m2o: M2O Relationship
+field_m2a: M2A Relationship
 field_o2m: O2M Relationship
 field_m2m: M2M Relationship
 field_translations: Translations
@@ -367,6 +368,7 @@ collection_created: Collection Created
 modified_on: Modified On
 card_size: Card Size
 sort_field: Sort Field
+add_sort_field: Add Sort Field
 sort: Sort
 status: Status
 toggle_manual_sorting: Toggle Manual Sorting
@@ -430,11 +432,14 @@ delete_collection_are_you_sure: >-
 collections_shown: Collections Shown
 visible_collections: Visible Collections
 hidden_collections: Hidden Collections
+show_hidden_collections: Show Hidden Collections
+hide_hidden_collections: Hide Hidden Collections
 unmanaged_collections: Unconfigured Collections
 system_collections: System Collections
 placeholder: Placeholder
 icon_left: Icon Left
 icon_right: Icon Right
+count_other_revisions: '{count} Other Revisions'
 font: Font
 sans_serif: Sans Serif
 serif: Serif
@@ -583,6 +588,7 @@ scope: Scope
 layout: Layout
 changes_are_permanent: Changes are permanent
 preset_name_placeholder: Name of bookmark...
+preset_search_placeholder: Search query...
 editing_preset: Editing Preset
 layout_preview: Layout Preview
 layout_setup: Layout Setup
