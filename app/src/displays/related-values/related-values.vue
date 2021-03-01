@@ -1,7 +1,7 @@
 <template>
 	<value-null v-if="!relatedCollection" />
 	<v-menu
-		v-else-if="['o2m', 'm2m', 'translations'].includes(type.toLowerCase())"
+		v-else-if="['o2m', 'm2m', 'm2a', 'translations'].includes(type.toLowerCase())"
 		show-arrow
 		:disabled="value.length === 0"
 	>
@@ -14,7 +14,7 @@
 		<v-list>
 			<v-list-item v-for="item in value" :key="item[primaryKeyField]" :to="getLinkForItem(item)">
 				<v-list-item-content>
-					<render-template :template="template" :item="item" :collection="relatedCollection" />
+					<render-template :template="_template" :item="item" :collection="relatedCollection" />
 				</v-list-item-content>
 				<v-list-item-icon>
 					<v-icon name="launch" small />
@@ -22,7 +22,7 @@
 			</v-list-item>
 		</v-list>
 	</v-menu>
-	<render-template v-else :template="template" :item="value" :collection="relatedCollection" />
+	<render-template v-else :template="_template" :item="value" :collection="relatedCollection" />
 </template>
 
 <script lang="ts">
@@ -48,7 +48,7 @@ export default defineComponent({
 		},
 		template: {
 			type: String,
-			required: true,
+			default: null,
 		},
 		type: {
 			type: String,
@@ -66,7 +66,11 @@ export default defineComponent({
 			}
 		});
 
-		return { relatedCollection, primaryKeyField, getLinkForItem };
+		const _template = computed(() => {
+			return props.template || `{{ ${primaryKeyField.value!.field} }}`;
+		});
+
+		return { relatedCollection, primaryKeyField, getLinkForItem, _template };
 
 		function getLinkForItem(item: any) {
 			if (!relatedCollection.value || !primaryKeyField.value) return null;

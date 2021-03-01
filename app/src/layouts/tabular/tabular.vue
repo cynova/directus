@@ -134,18 +134,18 @@
 import Vue from 'vue';
 import { defineComponent, PropType, ref, computed, inject, toRefs, Ref, watch } from '@vue/composition-api';
 
-import { HeaderRaw, Item } from '../../components/v-table/types';
-import { Field, Filter } from '../../types';
-import router from '../../router';
-import useSync from '../../composables/use-sync';
+import { HeaderRaw, Item } from '@/components/v-table/types';
+import { Field, Filter } from '@/types';
+import router from '@/router';
+import useSync from '@/composables/use-sync';
 import { debounce, clone } from 'lodash';
 import Draggable from 'vuedraggable';
-import useCollection from '../../composables/use-collection';
-import useItems from '../../composables/use-items';
-import i18n from '../../lang';
-import adjustFieldsForDisplays from '../../utils/adjust-fields-for-displays';
-import hideDragImage from '../../utils/hide-drag-image';
-import useShortcut from '../../composables/use-shortcut';
+import useCollection from '@/composables/use-collection';
+import useItems from '@/composables/use-items';
+import i18n from '@/lang';
+import adjustFieldsForDisplays from '@/utils/adjust-fields-for-displays';
+import hideDragImage from '@/utils/hide-drag-image';
+import useShortcut from '@/composables/use-shortcut';
 import get from '@/utils/get-nested-field';
 import useFieldTree from '@/composables/use-field-tree';
 import { FieldTree } from '@/composables/use-field-tree/types';
@@ -238,14 +238,17 @@ export default defineComponent({
 
 		const { sort, limit, page, fields, fieldsWithRelational } = useItemOptions();
 
-		const { items, loading, error, totalPages, itemCount, changeManualSort, getItems } = useItems(collection, {
-			sort,
-			limit,
-			page,
-			fields: fieldsWithRelational,
-			filters: _filters,
-			searchQuery: _searchQuery,
-		});
+		const { items, loading, error, totalPages, itemCount, totalCount, changeManualSort, getItems } = useItems(
+			collection,
+			{
+				sort,
+				limit,
+				page,
+				fields: fieldsWithRelational,
+				filters: _filters,
+				searchQuery: _searchQuery,
+			}
+		);
 
 		const {
 			tableSort,
@@ -258,6 +261,19 @@ export default defineComponent({
 		} = useTable();
 
 		const showingCount = computed(() => {
+			if ((itemCount.value || 0) < (totalCount.value || 0)) {
+				if (itemCount.value === 1) {
+					return i18n.t('one_filtered_item');
+				}
+				return i18n.t('start_end_of_count_filtered_items', {
+					start: i18n.n((+page.value - 1) * limit.value + 1),
+					end: i18n.n(Math.min(page.value * limit.value, itemCount.value || 0)),
+					count: i18n.n(itemCount.value || 0),
+				});
+			}
+			if (itemCount.value === 1) {
+				return i18n.t('one_item');
+			}
 			return i18n.t('start_end_of_count_items', {
 				start: i18n.n((+page.value - 1) * limit.value + 1),
 				end: i18n.n(Math.min(page.value * limit.value, itemCount.value || 0)),
@@ -300,6 +316,7 @@ export default defineComponent({
 			page,
 			toPage,
 			itemCount,
+			totalCount,
 			fieldsInCollection,
 			fields,
 			limit,
@@ -337,22 +354,26 @@ export default defineComponent({
 		}
 
 		function useItemOptions() {
-			const page = ref(1);
-
-			watch(
-				() => props.collection,
-				() => (page.value = 1),
-				{ immediate: true }
-			);
+			const page = computed({
+				get() {
+					return _layoutQuery.value?.page || 1;
+				},
+				set(newPage: number) {
+					_layoutQuery.value = {
+						...(_layoutQuery.value || {}),
+						page: newPage,
+					};
+				},
+			});
 
 			const sort = computed({
 				get() {
 					return _layoutQuery.value?.sort || primaryKeyField.value?.field;
 				},
 				set(newSort: string) {
-					page.value = 1;
 					_layoutQuery.value = {
 						...(_layoutQuery.value || {}),
+						page: 1,
 						sort: newSort,
 					};
 				},
@@ -360,12 +381,12 @@ export default defineComponent({
 
 			const limit = computed({
 				get() {
-					return _layoutOptions.value?.limit || 25;
+					return _layoutQuery.value?.limit || 25;
 				},
 				set(newLimit: number) {
-					page.value = 1;
-					_layoutOptions.value = {
-						...(_layoutOptions.value || {}),
+					_layoutQuery.value = {
+						...(_layoutQuery.value || {}),
+						page: 1,
 						limit: newLimit,
 					};
 				},
@@ -383,7 +404,12 @@ export default defineComponent({
 						if (Array.isArray(_layoutQuery.value.fields)) return _layoutQuery.value.fields;
 					}
 
-					const fields = _layoutQuery.value?.fields || fieldsInCollection.value.slice(0, 4).map(({ field }) => field);
+					const fields =
+						_layoutQuery.value?.fields ||
+						fieldsInCollection.value
+							.filter((field) => !!field.meta?.hidden === false)
+							.slice(0, 4)
+							.map(({ field }) => field);
 
 					return fields;
 				},
@@ -546,7 +572,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import '../../styles/mixins/breakpoint';
+@import '@/styles/mixins/breakpoint';
 
 .layout-tabular {
 	display: contents;

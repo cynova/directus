@@ -30,6 +30,7 @@ fields:
   - field: avatar
     interface: file
     width: full
+    display: image
 
   - field: location
     interface: text-input
@@ -53,6 +54,11 @@ fields:
     width: full
     options:
       iconRight: local_offer
+    display: labels
+    display_options:
+      defaultBackground: '#ECEFF1'
+      choices: null
+      format: false
 
   - field: preferences_divider
     interface: divider
@@ -115,6 +121,9 @@ fields:
       template: '{{ name }}'
     special: m2o
     width: half
+    display: related-values
+    display_options:
+      template: '{{ name }}'
 
   - field: token
     interface: token
@@ -135,3 +144,6 @@ fields:
 
   - field: last_access
     width: half
+    display: datetime
+    display_options:
+      relative: true

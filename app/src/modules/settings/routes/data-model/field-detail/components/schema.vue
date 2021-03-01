@@ -15,6 +15,7 @@
 					autofocus
 					class="monospace"
 					v-model="fieldData.field"
+					:nullable="false"
 					db-safe
 					:placeholder="$t('a_unique_column_name')"
 				/>
@@ -88,26 +89,26 @@
 					v-if="['string', 'uuid'].includes(fieldData.type)"
 					class="monospace"
 					v-model="defaultValue"
-					:placeholder="$t('add_a_default_value')"
+					placeholder="NULL"
 				/>
 				<v-textarea
 					v-else-if="['text', 'json'].includes(fieldData.type)"
 					class="monospace"
 					v-model="defaultValue"
-					:placeholder="$t('add_a_default_value')"
+					placeholder="NULL"
 				/>
 				<v-input
 					v-else-if="['integer', 'bigInteger', 'float', 'decimal'].includes(fieldData.type)"
 					type="number"
 					class="monospace"
 					v-model="defaultValue"
-					:placeholder="$t('add_a_default_value')"
+					placeholder="NULL"
 				/>
 				<v-input
 					v-else-if="['timestamp', 'datetime', 'date', 'time'].includes(fieldData.type)"
 					class="monospace"
 					v-model="defaultValue"
-					:placeholder="$t('add_a_default_value')"
+					placeholder="NULL"
 				/>
 				<v-select
 					v-else-if="fieldData.type === 'boolean'"
@@ -128,7 +129,7 @@
 						},
 					]"
 				/>
-				<v-input v-else class="monospace" v-model="defaultValue" disabled :placeholder="$t('add_a_default_value')" />
+				<v-input v-else class="monospace" v-model="defaultValue" disabled placeholder="NULL" />
 			</div>
 
 			<div class="field half-left" v-if="fieldData.schema">
@@ -146,9 +147,7 @@
 
 <script lang="ts">
 import { defineComponent, computed } from '@vue/composition-api';
-import useSync from '../../../../../../composables/use-sync';
-import { types } from '../../../../../../types';
-import i18n from '../../../../../../lang';
+import i18n from '@/lang';
 import { state } from '../store';
 
 export const fieldTypes = [
@@ -211,6 +210,10 @@ export const fieldTypes = [
 	{
 		text: i18n.t('uuid'),
 		value: 'uuid',
+	},
+	{
+		text: i18n.t('hash'),
+		value: 'hash',
 	},
 ];
 
@@ -400,8 +403,8 @@ export default defineComponent({
 @import '@/styles/mixins/form-grid';
 
 .form {
-	--v-form-vertical-gap: 32px;
-	--v-form-horizontal-gap: 32px;
+	--form-vertical-gap: 32px;
+	--form-horizontal-gap: 32px;
 
 	@include form-grid;
 }

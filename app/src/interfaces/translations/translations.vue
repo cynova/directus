@@ -35,7 +35,7 @@ import api from '@/api';
 import { Relation } from '@/types';
 import getFieldsFromTemplate from '@/utils/get-fields-from-template';
 import DrawerItem from '@/views/private/components/drawer-item/drawer-item.vue';
-import { useCollection } from '../../composables/use-collection';
+import { useCollection } from '@/composables/use-collection';
 import { unexpectedError } from '@/utils/unexpected-error';
 
 export default defineComponent({

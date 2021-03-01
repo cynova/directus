@@ -15,7 +15,7 @@ required: Необходимые
 requires_value: Требуется значение
 create_preset: Создать Пресет
 create_role: Создать Роль
-create_user: Создать пользователя
+create_user: Создать Пользователя
 create_webhook: Создать Веб-хук
 invite_users: Пригласить Пользователей
 email_examples: 'admin@example.com, user@example.com...'
@@ -27,6 +27,8 @@ connection_fair: Нормальное Подключение
 connection_poor: Плохое Подключение
 rename_folder: Переименовать папку
 delete_folder: Удалить папку
+prefix: Префикс
+suffix: Суффикс
 reset_bookmark: Сбросить закладку
 rename_bookmark: Переименовать закладку
 update_bookmark: Обновить закладку
@@ -46,12 +48,10 @@ os_type: Тип ОС
 os_version: Версия ОС
 os_uptime: Время работы ОС
 os_totalmem: Память ОС
-archive: Архив
+archive: Архивировать
 archive_confirm: Вы уверены, что хотите архивировать этот элемент?
 archive_confirm_count: >-
   Элементы не выбраны | Вы уверены, что хотите архивировать этот элемент? | Вы уверены, что хотите архивировать эти {count} элементов?
-reset_system_permissions: Сбросить Системные Разрешения
-reset_system_permissions_copy: Сбросить все системные разрешения к значениям по умолчанию
 unarchive: Разархивировать
 unarchive_confirm: Вы уверены, что хотите разархивировать этот элемент?
 nested_files_folders_will_be_moved: Вложенные файлы и папки будут перемещены на один уровень вверх.
@@ -75,14 +75,14 @@ validationError:
 all_access: Полный доступ
 no_access: Нет Доступа
 use_custom: Использовать Свой
-field_standard: Стандартный,
-field_presentation: Представление и Алиасы,
-field_file: Один Файл,
-field_files: Несколько Файлов,
-field_m2o: Связка M2O,
-field_o2m: Связка O2M,
-field_m2m: Связка M2M,
-field_translations: Переводы,
+field_standard: Стандарт
+field_presentation: Представление и Алиасы
+field_file: Один Файл
+field_files: Несколько Файлов
+field_m2o: Связка M2O
+field_o2m: Связка O2M
+field_m2m: Связка M2M
+field_translations: Переводы
 item_permissions: Разрешения Элемента
 field_permissions: Разрешения Поля
 field_validation: Валидация Поля
@@ -114,7 +114,6 @@ schema_setup_title: Как это поле должно сохранить в б
 schema_field_title: Как это поле должно вести в приложении?
 create_field: Создать Поле
 creating_new_field: 'Новое Поле ({collection})'
-updating_field_field: '{field} ({collection})'
 reset_page_preferences: Сбросить Настройки Страницы
 hidden_field: Скрытое Поле
 hidden_on_detail: Скрывать в карточке
@@ -134,6 +133,7 @@ text: Текст
 time: Время
 timestamp: Отметка времени
 uuid: UUID
+hash: Хэш
 not_available_for_type: Недоступно для этого Типа
 create_translations: Создать Переводы
 auto_generate: Авто-Генерация
@@ -154,7 +154,6 @@ choose_a_type: Выберите Тип...
 determined_by_relationship: Определяется Связкой
 add_note: Добавить заметку для пользователей...
 default_value: Значение По умолчанию
-add_a_default_value: Добавить значение по умолчанию...
 interface_setup_title: Как пользователи будут взаимодействовать с этим полем?
 display_setup_title: Как будет отображаться значение этого поля?
 standard_field: Стандартное Поле
@@ -174,6 +173,8 @@ length: Длина
 precision_scale: Точность и Масштаб
 readonly: Только для чтения
 unique: Уникальный
+updated_on: Дата обновления
+updated_by: Обновлено
 primary_key: Первичный ключ
 foreign_key: Внешний Ключ
 finish_setup: Завершить Настройку
@@ -351,6 +352,8 @@ collection_created: Коллекция Создана
 modified_on: Дата изменения
 card_size: Размер Карточки
 sort_field: Поле сортировки
+sort: Сортировать
+status: Статус
 toggle_manual_sorting: Переключить Ручную Сортировку
 bookmark_doesnt_exist: Закладка Не Существует
 bookmark_doesnt_exist_copy: Закладка, которую вы пытаетесь открыть не найдена.
@@ -423,6 +426,8 @@ circle: Круг
 empty_item: Пустой Элемент
 log_in_with: 'Войти с помощью {provider}'
 advanced_filter: Расширенный Фильтр
+delete_advanced_filter: Удалить Фильтр
+change_advanced_filter_operator: Изменить Оператор
 operators:
   eq: Равно
   neq: Не равно
@@ -453,6 +458,8 @@ upload_pending: Ожидание Загрузки
 drag_file_here: Перетащите Файлы Сюда
 click_to_browse: Нажмите для Просмотра
 layout_options: Параметры Макета
+rows: Записи
+columns: Колонки
 collection_setup: Настройки Коллекции
 optional_system_fields: Необязательные Системные Поля
 value_unique: Значение должно быть уникальным
@@ -481,7 +488,7 @@ create: Создать
 on_create: При Создании
 on_update: Во время обновления
 read: Чтение
-update: Обновление
+update: Обновить
 select_fields: Выбрать поля
 format_text: Форматировать Текст
 bold: Жирный
@@ -503,17 +510,19 @@ wysiwyg_options:
   strikethrough: Зачеркнутый
   subscript: Подстрочный
   superscript: Надстрочный
+  codeblock: Код
   blockquote: Цитата
   bullist: Маркированный Список
   numlist: Нумерованный Список
   hr: Горизонтальный Разделитель
-  link: Добавить Ссылку
+  link: Ссылка
   unlink: Удалить Ссылку
   media: Добавить Медиа
   image: Добавить Изображение
   copy: Копировать
   cut: Вырезать
   paste: Вставить
+  heading: Заголовок
   h1: Заголовок 1
   h2: Заголовок 2
   h3: Заголовок 3
@@ -561,7 +570,7 @@ layout_setup: Настройка Макета
 unsaved_changes: Несохранённые изменения
 unsaved_changes_copy: Вы уверены, что хотите покинуть эту страницу?
 discard_changes: Отменить изменения
-keep_editing: Продолжайте редактировать
+keep_editing: Продолжить Редактирование
 page_help_collections_overview: '**Обзор Коллекций** — Списки всех коллекций, к которым у вас есть доступ.'
 page_help_collections_collection: >-
   **Просмотр Элементов** — Список всех элементов в {collection}, к которым у вас есть доступ. Настройте макет, фильтры и сортировку под себя, и даже сохраните закладки в разных конфигурациях для быстрого доступа.
@@ -575,13 +584,13 @@ page_help_files_collection: >-
   **Библиотека Файлов** — Список всех файлов, загруженных в этот проект. Настройте макет, фильтры и сортировку под себя, и даже сохраните закладки в разных конфигурациях для быстрого доступа.
 page_help_files_item: >-
   **Карточка Файла** — Форма для управления метаданными файла, редактирования исходного файла и обновления настроек доступа.
-page_help_settings_project: '**Настройки Проекта** — Глобальные параметры конфигурации проекта.'
+page_help_settings_project: "**Настройки Проекта** — Глобальные параметры конфигурации проекта."
 page_help_settings_datamodel_collections: >-
   **Модель Данных: Коллекции** — Список всех доступных коллекций. Включает видимые, скрытые и системные коллекции, а также неуправляемые таблицы базы данных, которые могут быть добавлены.
 page_help_settings_datamodel_fields: >-
   **Модель Данных: Коллекция** — Форма для управления этой коллекцией и ее полями.
 page_help_settings_roles_collection: '**Просмотр Ролей** — Список Администраторов, Публичных и собственных Ролей Пользователей.'
-page_help_settings_roles_item: '**Карточка Роли** — Управление разрешениями роли и другими настройками.'
+page_help_settings_roles_item: "**Карточка Роли** — Управление разрешениями роли и другими настройками."
 page_help_settings_presets_collection: >-
   **Просмотр Пресетов** — Список всех пресетов проекта, включая: пользователей, ролей и глобальные закладки, а также представления по умолчанию.
 page_help_settings_presets_item: >-
@@ -593,7 +602,6 @@ page_help_users_item: >-
   **Карточка Пользователя** — Управляйте данными вашего аккаунта или просматривайте данные других пользователей.
 activity_feed: Лента Активности
 add_new: Создать
-from_collection: 'Из Коллекции “{collection}”'
 create_new: Создать Новый
 all: Все
 none: Нет
@@ -608,49 +616,59 @@ singleton_label: Считать одним объектом
 system_fields_locked: Системные поля заблокированы и не могут быть изменены
 fields:
   directus_activity:
+    item: Ключ Элемента
     action: Действие
     collection: Коллекция
-    item: Ключ предмета
-    user: Действовал
-    timestamp: Действие на
-    edited_on: Изменено
-    comment_deleted_on: Комментарий удалён
-    ip: IP-адрес
-    user_agent: Пользовательский агент
+    timestamp: Время Действия
+    user: Пользователь
     comment: Комментарий
+    user_agent: Пользовательский агент
+    ip: IP-адрес
+    revisions: Ревизии
   directus_collections:
+    collection: Коллекция
+    icon: Иконка
+    note: Заметка
+    display_template: Шаблон отображения
+    hidden: Скрыто
+    singleton: Синглтон
     translations: Переводы Названия Коллекции
+    sort_field: Поле сортировки
   directus_files:
     title: Заголовок
+    description: Описание
     tags: Теги
     location: Местоположение
-    description: Описание
-    filename_download: Загрузка имени файла
-    filename_disk: Диск с именем файла
-    private_hash: Приватный хэш
-    checksum: Контрольная сумма
-    uploaded_on: Загружено
-    uploaded_by: Загружено
-    width: Ширина
-    height: Высота
-    duration: Продолжительность
-    filesize: Размер файла
     metadata: Метаданные
+    filesize: Размер файла
+    modified_on: Дата изменения
+    created_on: Дата создания
+    created_by: Кем создано
+    embed: Встроить
+    uploaded_by: Загружено
+    folder: Папка
+    width: Ширина
+    uploaded_on: Загружено
+    height: Высота
+    charset: Кодировка
+    duration: Продолжительность
   directus_users:
-    status: Статус
     first_name: Имя
     last_name: Фамилия
     email: Email
-    email_notifications: Уведомления по Email
     password: Пароль
-    role: Роль
-    company: Компания
-    title: Заголовок
-    timezone: Часовой пояс
-    language: Язык
     avatar: Аватар
+    location: Местоположение
+    title: Заголовок
+    description: Описание
+    tags: Теги
+    language: Язык
     theme: Тема
     tfa_secret: Двухфакторная аутентификация
+    status: Статус
+    role: Роль
+    last_page: Последняя Страница
+    last_access: Последний Доступ
   directus_settings:
     project_name: Имя Проекта
     project_url: URL Проекта
@@ -660,7 +678,6 @@ fields:
     public_background: Публичный Фон
     public_note: Публичное Примечание
     auth_password_policy: Политика Паролей Входа
-    auth_idle_timeout: Тайм-аут при Бездействии
     auth_login_attempts: Попыток Входа
     storage_asset_presets: Пресеты Элементов Хранилища
     storage_asset_transform: Преобразование Элементов Хранилища
@@ -676,9 +693,9 @@ fields:
     name: Название роли
     icon: Иконка Роли
     description: Описание
-    ip_access: Доступ IP
     app_access: Доступ к Приложению
     admin_access: Доступ Администратора
+    ip_access: Доступ IP
     enforce_tfa: Требуется 2FA
     users: Пользователи в Роли
     module_list: Навигация по Модулям
@@ -721,7 +738,7 @@ danger: Опасность
 junction_collection: Узловая Коллекция
 latency: Задержка
 login: Войти
-my_activity: Мои активности
+my_activity: Моя Активность
 not_authenticated: Не аутентифицирован
 authenticated: Аутентифицирован
 options: Параметры
@@ -745,6 +762,8 @@ sign_out: Выйти
 sign_out_confirm: Вы уверены, что хотите выйти?
 something_went_wrong: Что-то пошло не так.
 sort_direction: Направление сортировки
+sort_asc: По Возрастанию
+sort_desc: По Убыванию
 template: Шаблон
 translation: Перевод
 value: Значение
@@ -842,10 +861,6 @@ interfaces:
   markdown:
     markdown: Markdown
     description: Ввод и предпросмотр markdown
-    tabbed: Вкладками
-    tabbed_label: Показывать предпросмотр в отдельной вкладке
-    edit: Редактирование
-    preview: Предпросмотр
   notice:
     notice: Примечание
     description: Показать короткое примечание
@@ -947,8 +962,6 @@ displays:
     datetime: Дата и время
     description: Показывать значения, относящиеся ко времени
     format: Формат
-    format_note: >-
-      Пользовательский формат принимает __[Date Field Symbol Table](https://www.unicode.org/reports/tr35/tr35-dates.html#Date_Field_Symbol_Table)__
     long: Длинный
     short: Короткий
     relative: Относительный

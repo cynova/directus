@@ -6,14 +6,15 @@
 	--border-normal-alt: #78909c;
 	--border-subdued: #2E3F47;
 
-	--foreground-normal: #cfd8dc;
+	--foreground-normal: #B3C4CC; // Less contrast for improved hierarchy
+	--foreground-normal-alt: #cfd8dc; // More contrast for titles and labels
 	--foreground-subdued: #697A83;
 	--foreground-inverted:#263238;
 
 	--background-normal: #2E3C43; // #37474f
 	--background-normal-alt: #3A4B53; // #455a64
 	--background-subdued: #2D3A41;
-	--background-highlight: #F9FAFB; // ADJUST
+	--background-highlight: #2D3A41;
 	--background-page: #263238;
 	--background-page-rgb: 38, 50, 56;
 	--background-inverted: #FFF;

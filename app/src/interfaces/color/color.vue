@@ -25,7 +25,7 @@
 					</v-button>
 				</template>
 				<template #append>
-					<v-icon name="palette" />
+					<v-icon :name="isValidColor ? 'close' : 'palette'" @click="unsetColor" />
 				</template>
 			</v-input>
 		</template>
@@ -59,7 +59,7 @@
 					class="color-data-input"
 					pattern="\d*"
 					:min="0"
-					:max="i === 1 ? 360 : 100"
+					:max="i === 0 ? 360 : 100"
 					:step="1"
 					maxlength="3"
 				/>
@@ -148,6 +148,10 @@ export default defineComponent({
 		const colorTypes = ['RGB', 'HSL'] as ColorType[];
 		const colorType = ref<ColorType>('RGB');
 
+		function unsetColor() {
+			emit('input', null);
+		}
+
 		function activateColorPicker() {
 			(htmlColorInput.value?.$el as HTMLElement).getElementsByTagName('input')[0].click();
 		}
@@ -180,6 +184,7 @@ export default defineComponent({
 			Color,
 			setValue,
 			lowContrast,
+			unsetColor,
 		};
 
 		function setValue(type: 'rgb' | 'hsl', i: number, val: number) {
@@ -197,41 +202,29 @@ export default defineComponent({
 		function useColor() {
 			const color = ref<Color | null>(null);
 
-			watch(color, (newColor) => {
-				if (newColor === null) return emit('input', null);
-
-				const hex = newColor.hex();
-
-				if (hex.length === 0) emit('input', null);
-				else emit('input', hex);
-			});
-
 			watch(
 				() => props.value,
 				(newValue) => {
-					if (newValue === null) return;
-					const newColor = Color(newValue);
-					if (newColor === null || newColor === color.value) return;
-					color.value = newColor;
+					color.value = newValue !== null ? Color(newValue) : null;
 				},
 				{ immediate: true }
 			);
 
 			const rgb = computed<number[]>({
 				get() {
-					return color.value !== null ? color.value.rgb().array() : [0, 0, 0];
+					return color.value !== null ? color.value.rgb().array().map(Math.round) : [0, 0, 0];
 				},
 				set(newRGB) {
-					color.value = Color.rgb(newRGB);
+					setColor(Color.rgb(newRGB));
 				},
 			});
 
 			const hsl = computed<number[]>({
 				get() {
-					return color.value !== null ? color.value.hsl().array() : [0, 0, 0];
+					return color.value !== null ? color.value.hsl().array().map(Math.round) : [0, 0, 0];
 				},
 				set(newHSL) {
-					color.value = Color.hsl(newHSL);
+					setColor(Color.hsl(newHSL));
 				},
 			});
 
@@ -240,13 +233,26 @@ export default defineComponent({
 					return color.value !== null ? color.value.hex() : null;
 				},
 				set(newHex) {
-					if (newHex === '') color.value = null;
-					if (newHex === null || isHex(newHex) === false) return;
-					color.value = Color(newHex);
+					if (newHex === null || newHex === '') {
+						unsetColor();
+					} else {
+						if (isHex(newHex) === false) return;
+						setColor(Color(newHex));
+					}
 				},
 			});
 
 			return { rgb, hsl, hex, color };
+
+			function setColor(newColor: Color | null) {
+				color.value = newColor;
+
+				if (newColor === null) {
+					unsetColor();
+				} else {
+					emit('input', newColor.hex());
+				}
+			}
 		}
 	},
 });
@@ -267,7 +273,7 @@ export default defineComponent({
 	width: calc(var(--input-height) - 12px);
 	max-height: calc(var(--input-height) - 12px);
 	overflow: hidden;
-	border-radius: var(--border-radius);
+	border-radius: calc(var(--border-radius) + 2px);
 	cursor: pointer;
 }
 

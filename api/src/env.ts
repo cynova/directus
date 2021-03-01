@@ -3,12 +3,17 @@
  * See example.env for all possible keys
  */
 
-import dotenv from 'dotenv';
-import { clone } from 'lodash';
+import fs from 'fs';
+import path from 'path';
+import { requireYAML } from './utils/require-yaml';
 
-dotenv.config();
+import dotenv from 'dotenv';
+import { clone, toString, toNumber } from 'lodash';
+import { toArray } from './utils/to-array';
+import logger from './logger';
 
 const defaults: Record<string, any> = {
+	CONFIG_PATH: path.resolve(process.cwd(), '.env'),
 	PORT: 8055,
 	PUBLIC_URL: 'http://localhost:8055',
 
@@ -28,6 +33,12 @@ const defaults: Record<string, any> = {
 	REFRESH_TOKEN_COOKIE_SAME_SITE: 'lax',
 
 	CORS_ENABLED: true,
+	CORS_ORIGIN: true,
+	CORS_METHODS: 'GET,POST,PATCH,DELETE',
+	CORS_ALLOWED_HEADERS: 'Content-Type,Authorization',
+	CORS_EXPOSED_HEADERS: 'Content-Range',
+	CORS_CREDENTIALS: true,
+	CORS_MAX_AGE: 18000,
 
 	CACHE_ENABLED: false,
 	CACHE_STORE: 'memory',
@@ -48,19 +59,90 @@ const defaults: Record<string, any> = {
 	TELEMETRY: true,
 };
 
+// Allows us to force certain environment variable into a type, instead of relying
+// on the auto-parsed type in processValues. ref #3705
+const typeMap: Record<string, string> = {
+	PORT: 'number',
+
+	DB_NAME: 'string',
+	DB_USER: 'string',
+	DB_PASSWORD: 'string',
+	DB_DATABASE: 'string',
+	DB_PORT: 'number',
+};
+
 let env: Record<string, any> = {
 	...defaults,
 	...process.env,
+	...getEnv(),
 };
+
+process.env = env;
 
 env = processValues(env);
 
 export default env;
 
+function getEnv() {
+	const configPath = process.env.CONFIG_PATH || defaults.CONFIG_PATH;
+
+	if (fs.existsSync(configPath) === false) return {};
+
+	const fileExt = path.extname(configPath).toLowerCase();
+
+	if (fileExt === '.js') {
+		const module = require(configPath);
+		const exported = module.default || module;
+
+		if (typeof exported === 'function') {
+			return exported(process.env);
+		} else if (typeof exported === 'object') {
+			return exported;
+		}
+
+		logger.warn(
+			`Invalid JS configuration file export type. Requires one of "function", "object", received: "${typeof exported}"`
+		);
+	}
+
+	if (fileExt === '.json') {
+		return require(configPath);
+	}
+
+	if (fileExt === '.yaml' || fileExt === '.yml') {
+		const data = requireYAML(configPath);
+
+		if (typeof data === 'object') {
+			return data as Record<string, string>;
+		}
+
+		logger.warn('Invalid YAML configuration. Root has to ben an object.');
+	}
+
+	// Default to env vars plain text files
+	return dotenv.parse(fs.readFileSync(configPath).toString());
+}
+
 function processValues(env: Record<string, any>) {
 	env = clone(env);
 
 	for (const [key, value] of Object.entries(env)) {
+		if (typeMap[key]) {
+			switch (typeMap[key]) {
+				case 'number':
+					env[key] = toNumber(value);
+					break;
+				case 'string':
+					env[key] = toString(value);
+					break;
+				case 'array':
+					env[key] = toArray(value);
+					break;
+			}
+
+			continue;
+		}
+
 		if (value === 'true') env[key] = true;
 		if (value === 'false') env[key] = false;
 		if (value === 'null') env[key] = null;

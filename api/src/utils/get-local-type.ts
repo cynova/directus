@@ -81,7 +81,7 @@ const localTypeMap: Record<string, { type: typeof types[number]; useTimezone?: b
 };
 
 export default function getLocalType(
-	column: SchemaOverview[string]['columns'][string] | Column,
+	column: SchemaOverview['tables'][string]['columns'][string] | Column,
 	field?: FieldMeta
 ): typeof types[number] | 'unknown' {
 	const type = localTypeMap[column.data_type.toLowerCase().split('(')[0]];
@@ -92,6 +92,7 @@ export default function getLocalType(
 	}
 
 	if (field?.special?.includes('json')) return 'json';
+	if (field?.special?.includes('hash')) return 'hash';
 	if (field?.special?.includes('csv')) return 'csv';
 	if (field?.special?.includes('uuid')) return 'uuid';
 

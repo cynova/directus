@@ -1,5 +1,5 @@
 import express from 'express';
-import asyncHandler from 'express-async-handler';
+import asyncHandler from '../utils/async-handler';
 import Joi from 'joi';
 import { InvalidPayloadException, InvalidCredentialsException, ForbiddenException } from '../exceptions';
 import { UsersService, MetaService, AuthenticationService } from '../services';
@@ -203,6 +203,7 @@ router.delete(
 const inviteSchema = Joi.object({
 	email: Joi.alternatives(Joi.string().email(), Joi.array().items(Joi.string().email())).required(),
 	role: Joi.string().uuid({ version: 'uuidv4' }).required(),
+	invite_url: Joi.string().uri(),
 });
 
 router.post(
@@ -215,7 +216,7 @@ router.post(
 			accountability: req.accountability,
 			schema: req.schema,
 		});
-		await service.inviteUser(req.body.email, req.body.role);
+		await service.inviteUser(req.body.email, req.body.role, req.body.invite_url || null);
 		return next();
 	}),
 	respond

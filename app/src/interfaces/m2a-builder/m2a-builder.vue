@@ -6,7 +6,7 @@
 
 		<draggable
 			v-else
-			:value="value"
+			:value="previewValues"
 			handle=".drag-handle"
 			@input="onSort"
 			:set-data="hideDragImage"
@@ -14,9 +14,9 @@
 		>
 			<div
 				class="m2a-row"
-				v-for="(item, index) of previewValues"
-				:key="index"
-				@click="editExisting((value || [])[index])"
+				v-for="item of previewValues"
+				:key="item.$index"
+				@click="editExisting((value || [])[item.$index])"
 			>
 				<v-icon class="drag-handle" name="drag_handle" @click.stop v-if="sortField" />
 				<span class="collection">{{ collections[item[anyRelation.one_collection_field]].name }}:</span>
@@ -32,7 +32,7 @@
 					:item="item[anyRelation.many_field]"
 				/>
 				<div class="spacer" />
-				<v-icon class="clear-icon" name="clear" @click.stop="deselect((value || [])[index])" />
+				<v-icon class="clear-icon" name="clear" @click.stop="deselect((value || [])[item.$index])" />
 				<v-icon class="launch-icon" name="launch" />
 			</div>
 		</draggable>
@@ -52,9 +52,7 @@
 						:key="collection.collection"
 					>
 						<v-list-item-icon><v-icon :name="collection.icon" /></v-list-item-icon>
-						<v-list-item-text>
-							{{ $t('from_collection', { collection: collection.name }) }}
-						</v-list-item-text>
+						<v-text-overflow :text="collection.name" />
 					</v-list-item>
 				</v-list>
 			</v-menu>
@@ -73,9 +71,7 @@
 						:key="collection.collection"
 					>
 						<v-list-item-icon><v-icon :name="collection.icon" /></v-list-item-icon>
-						<v-list-item-text>
-							{{ $t('from_collection', { collection: collection.name }) }}
-						</v-list-item-text>
+						<v-text-overflow :text="collection.name" />
 					</v-list-item>
 				</v-list>
 			</v-menu>
@@ -108,16 +104,16 @@
 
 <script lang="ts">
 import { defineComponent, computed, PropType, ref, watch } from '@vue/composition-api';
-import { useRelationsStore, useCollectionsStore, useFieldsStore } from '../../stores';
-import { Relation, Collection } from '../../types/';
-import DrawerCollection from '../../views/private/components/drawer-collection/';
-import DrawerItem from '../../views/private/components/drawer-item/';
-import api from '../../api';
-import { unexpectedError } from '../../utils/unexpected-error';
-import { getFieldsFromTemplate } from '../../utils/get-fields-from-template';
+import { useRelationsStore, useCollectionsStore, useFieldsStore } from '@/stores';
+import { Relation, Collection } from '@/types/';
+import DrawerCollection from '@/views/private/components/drawer-collection/';
+import DrawerItem from '@/views/private/components/drawer-item/';
+import api from '@/api';
+import { unexpectedError } from '@/utils/unexpected-error';
+import { getFieldsFromTemplate } from '@/utils/get-fields-from-template';
 import { isPlainObject, cloneDeep } from 'lodash';
-import { getEndpoint } from '../../utils/get-endpoint';
-import { hideDragImage } from '../../utils/hide-drag-image';
+import { getEndpoint } from '@/utils/get-endpoint';
+import { hideDragImage } from '@/utils/hide-drag-image';
 import Draggable from 'vuedraggable';
 
 export default defineComponent({
@@ -253,51 +249,74 @@ export default defineComponent({
 			const junctionRowMap = ref<any[]>([]);
 
 			const previewValues = computed(() => {
+				// Need to wait until junctionRowMap got properly populated
+				if (junctionRowMap.value.length < 1) {
+					return [];
+				}
+
 				// Convert all string/number junction rows into junction row records from the map so we can inject the
 				// related values
-				const values = cloneDeep(props.value || [])
-					.map((val) => {
-						const junctionKey = isPlainObject(val) ? val[o2mRelation.value.many_primary] : val;
+				const values = cloneDeep(props.value || []).map((val, index) => {
+					const junctionKey = isPlainObject(val) ? val[o2mRelation.value.many_primary] : val;
 
-						const savedValues = junctionRowMap.value.find(
-							(junctionRow) => junctionRow[o2mRelation.value.many_primary] === junctionKey
-						);
+					const savedValues = junctionRowMap.value.find(
+						(junctionRow) => junctionRow[o2mRelation.value.many_primary] === junctionKey
+					);
 
-						if (isPlainObject(val)) {
-							return {
-								...savedValues,
-								...val,
-							};
-						} else {
-							return savedValues;
-						}
-					})
-					.filter((val) => val);
-
-				return values.map((val) => {
-					// Find and nest the related item values for use in the preview
-					const collection = val[anyRelation.value.one_collection_field!];
-
-					const key = isPlainObject(val[anyRelation.value.many_field])
-						? val[anyRelation.value.many_field][primaryKeys.value[collection]]
-						: val[anyRelation.value.many_field];
-
-					const item = relatedItemValues.value[collection]?.find((item) => item[primaryKeys.value[collection]] == key);
-
-					// When this item is created new and it has a uuid / auto increment id, there's no key to lookup
-					if (key && item) {
-						if (isPlainObject(val[anyRelation.value.many_field])) {
-							val[anyRelation.value.many_field] = {
-								...item,
-								...val[anyRelation.value.many_field],
-							};
-						} else {
-							val[anyRelation.value.many_field] = cloneDeep(item);
-						}
+					if (isPlainObject(val)) {
+						return {
+							...savedValues,
+							...val,
+							$index: index,
+						};
+					} else {
+						return {
+							...savedValues,
+							$index: index,
+						};
 					}
-
-					return val;
 				});
+
+				return values
+					.map((val) => {
+						// Find and nest the related item values for use in the preview
+						const collection = val[anyRelation.value.one_collection_field!];
+
+						const key = isPlainObject(val[anyRelation.value.many_field])
+							? val[anyRelation.value.many_field][primaryKeys.value[collection]]
+							: val[anyRelation.value.many_field];
+
+						const item = relatedItemValues.value[collection]?.find(
+							(item) => item[primaryKeys.value[collection]] == key
+						);
+						// When this item is created new and it has a uuid / auto increment id, there's no key to lookup
+						if (key && item) {
+							if (isPlainObject(val[anyRelation.value.many_field])) {
+								val[anyRelation.value.many_field] = {
+									...item,
+									...val[anyRelation.value.many_field],
+								};
+							} else {
+								val[anyRelation.value.many_field] = cloneDeep(item);
+							}
+						}
+
+						return val;
+					})
+					.sort((a, b) => {
+						const aSort = a[props.sortField];
+						const bSort = b[props.sortField];
+
+						if (aSort === bSort) {
+							return 0;
+						} else if (aSort === null) {
+							return 1;
+						} else if (bSort === null) {
+							return -1;
+						} else {
+							return aSort < bSort ? -1 : 1;
+						}
+					});
 			});
 
 			return { fetchValues, previewValues, loading, junctionRowMap, relatedItemValues };
@@ -368,6 +387,7 @@ export default defineComponent({
 									o2mRelation.value.many_primary,
 									anyRelation.value.many_field,
 									anyRelation.value.one_collection_field!,
+									props.sortField,
 								],
 							},
 						});
@@ -510,6 +530,10 @@ export default defineComponent({
 						},
 					};
 
+					if (props.sortField) {
+						editsAtStart.value[props.sortField] = junctionRow[props.sortField];
+					}
+
 					relatedPrimaryKey.value = relatedKey || '+';
 					currentlyEditing.value = item;
 					return;
@@ -546,16 +570,20 @@ export default defineComponent({
 			function onSort(sortedItems: any[]) {
 				emit(
 					'input',
-					sortedItems.map((sortedItem, index) => {
-						if (isPlainObject(sortedItem)) {
+					props.value.map((rawValue, index) => {
+						const sortedItemIndex = sortedItems.findIndex((sortedItem) => {
+							return sortedItem.$index === index;
+						});
+
+						if (isPlainObject(rawValue)) {
 							return {
-								...sortedItem,
-								[props.sortField]: index + 1,
+								...rawValue,
+								[props.sortField]: sortedItemIndex + 1,
 							};
 						} else {
 							return {
-								[o2mRelation.value.many_primary]: sortedItem,
-								[props.sortField]: index + 1,
+								[o2mRelation.value.many_primary]: rawValue,
+								[props.sortField]: sortedItemIndex + 1,
 							};
 						}
 					})
@@ -587,6 +615,10 @@ export default defineComponent({
 }
 
 .loader {
+	.v-skeleton-loader {
+		height: 52px;
+	}
+
 	.v-skeleton-loader + .v-skeleton-loader {
 		margin-top: 12px;
 	}
@@ -594,7 +626,7 @@ export default defineComponent({
 
 .buttons {
 	display: grid;
-	grid-gap: 12px;
+	grid-gap: var(--form-horizontal-gap);
 	grid-template-columns: 1fr 1fr;
 	margin-top: 12px;
 }

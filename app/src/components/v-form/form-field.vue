@@ -61,13 +61,13 @@
 
 <script lang="ts">
 import { defineComponent, PropType, computed, ref } from '@vue/composition-api';
-import { Field } from '../../types/';
+import { Field } from '@/types/';
 import marked from 'marked';
 import FormFieldLabel from './form-field-label.vue';
 import FormFieldMenu from './form-field-menu.vue';
 import FormFieldInterface from './form-field-interface.vue';
 import { ValidationError } from './types';
-import { getJSType } from '../../utils/get-js-type';
+import { getJSType } from '@/utils/get-js-type';
 import { isEqual } from 'lodash';
 
 export default defineComponent({
@@ -118,10 +118,17 @@ export default defineComponent({
 			return false;
 		});
 
+		const defaultValue = computed(() => {
+			const value = props.field.schema?.default_value;
+
+			if (value !== undefined) return value;
+			return null;
+		});
+
 		const _value = computed(() => {
 			if (props.value !== undefined) return props.value;
 			if (props.initialValue !== undefined) return props.initialValue;
-			return props.field.schema?.default_value;
+			return defaultValue.value;
 		});
 
 		const { showRaw, rawValue } = useRaw();
@@ -129,7 +136,11 @@ export default defineComponent({
 		return { isDisabled, marked, _value, emitValue, showRaw, rawValue };
 
 		function emitValue(value: any) {
-			if (isEqual(value, props.initialValue) || (value === null && props.initialValue === undefined)) {
+			if (
+				(isEqual(value, props.initialValue) ||
+					(props.initialValue === undefined && isEqual(value, defaultValue.value))) &&
+				props.batchMode === false
+			) {
 				emit('unset', props.field);
 			} else {
 				emit('input', value);
@@ -189,6 +200,7 @@ export default defineComponent({
 
 .note {
 	display: block;
+	max-width: 520px;
 	margin-top: 4px;
 	color: var(--foreground-subdued);
 	font-style: italic;

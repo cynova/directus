@@ -7,16 +7,13 @@ import argon2 from 'argon2';
 import { v4 as uuidv4 } from 'uuid';
 import database from '../database';
 import { clone, isObject, cloneDeep } from 'lodash';
-import { Relation, Item, AbstractServiceOptions, Accountability, PrimaryKey, SchemaOverview } from '../types';
+import { Item, AbstractServiceOptions, Accountability, PrimaryKey, SchemaOverview } from '../types';
 import { ItemsService } from './items';
-import { URL } from 'url';
 import Knex from 'knex';
-import env from '../env';
 import getLocalType from '../utils/get-local-type';
 import { format, formatISO } from 'date-fns';
 import { ForbiddenException } from '../exceptions';
 import { toArray } from '../utils/to-array';
-import { FieldMeta } from '../types';
 import { systemFieldRows } from '../database/system-data/fields';
 import { systemRelationRows } from '../database/system-data/relations';
 import { InvalidPayloadException } from '../exceptions';
@@ -71,19 +68,6 @@ export class PayloadService {
 			}
 
 			return value;
-		},
-		async 'file-links'({ action, value, payload }) {
-			if (action === 'read' && payload && payload.storage && payload.filename_disk) {
-				const publicKey = `STORAGE_${payload.storage.toUpperCase()}_PUBLIC_URL`;
-
-				return {
-					asset_url: new URL(`/assets/${payload.id}`, env.PUBLIC_URL),
-					public_url: new URL(payload.filename_disk, env[publicKey]),
-				};
-			}
-
-			// This is an non-existing column, so there isn't any data to save
-			return undefined;
 		},
 		async boolean({ action, value }) {
 			if (action === 'read') {
@@ -154,13 +138,20 @@ export class PayloadService {
 
 		const fieldsInPayload = Object.keys(processedPayload[0]);
 
-		let specialFieldsInCollection: FieldMeta[] = await this.knex
-			.select('field', 'special')
-			.from('directus_fields')
-			.where({ collection: this.collection })
-			.whereNotNull('special');
+		let specialFieldsInCollection = this.schema.fields.filter(
+			(field) => field.collection === this.collection && field.special && field.special.length > 0
+		);
 
-		specialFieldsInCollection.push(...systemFieldRows.filter((fieldMeta) => fieldMeta.collection === this.collection));
+		specialFieldsInCollection.push(
+			...systemFieldRows
+				.filter((fieldMeta) => fieldMeta.collection === this.collection)
+				.map((fieldMeta) => ({
+					id: fieldMeta.id,
+					collection: fieldMeta.collection,
+					field: fieldMeta.field,
+					special: fieldMeta.special ?? [],
+				}))
+		);
 
 		if (action === 'read') {
 			specialFieldsInCollection = specialFieldsInCollection.filter((fieldMeta) => {
@@ -200,7 +191,12 @@ export class PayloadService {
 		return processedPayload[0];
 	}
 
-	async processField(field: FieldMeta, payload: Partial<Item>, action: Action, accountability: Accountability | null) {
+	async processField(
+		field: SchemaOverview['fields'][number],
+		payload: Partial<Item>,
+		action: Action,
+		accountability: Accountability | null
+	) {
 		if (!field.special) return payload[field.field];
 		const fieldSpecials = field.special ? toArray(field.special) : [];
 
@@ -225,7 +221,7 @@ export class PayloadService {
 	 * shouldn't return with time / timezone info respectively
 	 */
 	async processDates(payloads: Partial<Record<string, any>>[]) {
-		const columnsInCollection = Object.values(this.schema[this.collection].columns);
+		const columnsInCollection = Object.values(this.schema.tables[this.collection].columns);
 
 		const columnsWithType = columnsInCollection.map((column) => ({
 			name: column.column_name,
@@ -278,10 +274,9 @@ export class PayloadService {
 	processA2O(payloads: Partial<Item>): Promise<Partial<Item>>;
 	async processA2O(payload: Partial<Item> | Partial<Item>[]): Promise<Partial<Item> | Partial<Item>[]> {
 		const relations = [
-			...(await this.knex
-				.select<Relation[]>('*')
-				.from('directus_relations')
-				.where({ many_collection: this.collection })),
+			...this.schema.relations.filter((relation) => {
+				return relation.many_collection === this.collection;
+			}),
 			...systemRelationRows.filter((systemRelation) => systemRelation.many_collection === this.collection),
 		];
 
@@ -322,7 +317,7 @@ export class PayloadService {
 					schema: this.schema,
 				});
 
-				const relatedPrimary = this.schema[relatedCollection].primary;
+				const relatedPrimary = this.schema.tables[relatedCollection].primary;
 				const relatedRecord: Partial<Item> = payload[relation.many_field];
 				const hasPrimaryKey = relatedRecord.hasOwnProperty(relatedPrimary);
 
@@ -350,10 +345,9 @@ export class PayloadService {
 	processM2O(payloads: Partial<Item>): Promise<Partial<Item>>;
 	async processM2O(payload: Partial<Item> | Partial<Item>[]): Promise<Partial<Item> | Partial<Item>[]> {
 		const relations = [
-			...(await this.knex
-				.select<Relation[]>('*')
-				.from('directus_relations')
-				.where({ many_collection: this.collection })),
+			...this.schema.relations.filter((relation) => {
+				return relation.many_collection === this.collection;
+			}),
 			...systemRelationRows.filter((systemRelation) => systemRelation.many_collection === this.collection),
 		];
 
@@ -404,10 +398,9 @@ export class PayloadService {
 	 */
 	async processO2M(payload: Partial<Item> | Partial<Item>[], parent?: PrimaryKey) {
 		const relations = [
-			...(await this.knex
-				.select<Relation[]>('*')
-				.from('directus_relations')
-				.where({ one_collection: this.collection })),
+			...this.schema.relations.filter((relation) => {
+				return relation.one_collection === this.collection;
+			}),
 			...systemRelationRows.filter((systemRelation) => systemRelation.one_collection === this.collection),
 		];
 

@@ -99,7 +99,7 @@
 
 				<template #append-outer>
 					<save-options
-						:disabled="hasEdits === false || saveAllowed === false"
+						v-if="hasEdits === true || saveAllowed === true"
 						@save-and-stay="saveAndStay"
 						@save-as-copy="saveAsCopyAndNavigate"
 					/>
@@ -157,7 +157,7 @@
 		<template #sidebar>
 			<file-info-sidebar-detail :file="item" />
 			<revisions-drawer-detail
-				v-if="isBatch === false && isNew === false"
+				v-if="isBatch === false && isNew === false && revisionsAllowed"
 				collection="directus_files"
 				:primary-key="primaryKey"
 				ref="revisionsDrawerDetail"
@@ -176,33 +176,26 @@
 <script lang="ts">
 import { defineComponent, computed, toRefs, ref, watch } from '@vue/composition-api';
 import FilesNavigation from '../components/navigation.vue';
-import { i18n } from '../../../lang';
-import router from '../../../router';
-import RevisionsDrawerDetail from '../../../views/private/components/revisions-drawer-detail';
-import CommentsSidebarDetail from '../../../views/private/components/comments-sidebar-detail';
-import useItem from '../../../composables/use-item';
-import SaveOptions from '../../../views/private/components/save-options';
-import FilePreview from '../../../views/private/components/file-preview';
-import ImageEditor from '../../../views/private/components/image-editor';
-import { nanoid } from 'nanoid';
-import FileLightbox from '../../../views/private/components/file-lightbox';
-import { useFieldsStore } from '../../../stores/';
-import { Field } from '../../../types';
+import { i18n } from '@/lang';
+import router from '@/router';
+import RevisionsDrawerDetail from '@/views/private/components/revisions-drawer-detail';
+import CommentsSidebarDetail from '@/views/private/components/comments-sidebar-detail';
+import useItem from '@/composables/use-item';
+import SaveOptions from '@/views/private/components/save-options';
+import FilePreview from '@/views/private/components/file-preview';
+import ImageEditor from '@/views/private/components/image-editor';
+import { Field } from '@/types';
 import FileInfoSidebarDetail from '../components/file-info-sidebar-detail.vue';
-import useFormFields from '../../../composables/use-form-fields';
 import FolderPicker from '../components/folder-picker.vue';
-import api, { addTokenToURL } from '../../../api';
-import getRootPath from '../../../utils/get-root-path';
+import api, { addTokenToURL } from '@/api';
+import { getRootPath } from '@/utils/get-root-path';
 import FilesNotFound from './not-found.vue';
-import useShortcut from '../../../composables/use-shortcut';
+import useShortcut from '@/composables/use-shortcut';
 import ReplaceFile from '../components/replace-file.vue';
-import { usePermissions } from '../../../composables/use-permissions';
-import { notify } from '../../../utils/notify';
-import { unexpectedError } from '../../../utils/unexpected-error';
-
-type Values = {
-	[field: string]: any;
-};
+import { usePermissions } from '@/composables/use-permissions';
+import { notify } from '@/utils/notify';
+import { unexpectedError } from '@/utils/unexpected-error';
+import unsavedChanges from '@/composables/unsaved-changes';
 
 export default defineComponent({
 	name: 'files-item',
@@ -240,7 +233,6 @@ export default defineComponent({
 		const form = ref<HTMLElement>();
 		const { primaryKey } = toRefs(props);
 		const { breadcrumb } = useBreadcrumb();
-		const fieldsStore = useFieldsStore();
 		const replaceFileDialogActive = ref(false);
 
 		const revisionsDrawerDetail = ref<Vue | null>(null);
@@ -261,13 +253,15 @@ export default defineComponent({
 		} = useItem(ref('directus_files'), primaryKey);
 
 		const hasEdits = computed<boolean>(() => Object.keys(edits.value).length > 0);
+
+		unsavedChanges(hasEdits);
+
 		const confirmDelete = ref(false);
 		const editActive = ref(false);
 		const fileSrc = computed(() => {
 			if (item.value && item.value.modified_on) {
 				return addTokenToURL(
-					getRootPath() +
-						`assets/${props.primaryKey}?cache-buster=${item.value.modified_on}&key=system-large-contain`
+					getRootPath() + `assets/${props.primaryKey}?cache-buster=${item.value.modified_on}&key=system-large-contain`
 				);
 			}
 
@@ -303,7 +297,7 @@ export default defineComponent({
 
 		useShortcut('meta+s', saveAndStay, form);
 
-		const { deleteAllowed, saveAllowed, updateAllowed, fields } = usePermissions(
+		const { deleteAllowed, saveAllowed, updateAllowed, fields, revisionsAllowed } = usePermissions(
 			ref('directus_files'),
 			item,
 			isNew
@@ -349,6 +343,7 @@ export default defineComponent({
 			updateAllowed,
 			fields,
 			fieldsFiltered,
+			revisionsAllowed,
 		};
 
 		function useBreadcrumb() {
@@ -381,7 +376,7 @@ export default defineComponent({
 		async function saveAndQuit() {
 			try {
 				await save();
-				router.push(`/files`);
+				router.push(to.value);
 			} catch {
 				// `save` will show unexpected error dialog
 			}
@@ -398,13 +393,13 @@ export default defineComponent({
 
 		async function saveAsCopyAndNavigate() {
 			const newPrimaryKey = await saveAsCopy();
-			router.push(`/files/${newPrimaryKey}`);
+			if (newPrimaryKey) router.push(`/files/${newPrimaryKey}`);
 		}
 
 		async function deleteAndQuit() {
 			try {
 				await remove();
-				router.push(`/files`);
+				router.push(to.value);
 			} catch {
 				// `remove` will show the unexpected error dialog
 			}

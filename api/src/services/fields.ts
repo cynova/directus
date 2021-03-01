@@ -1,3 +1,4 @@
+import { ALIAS_TYPES } from '../constants';
 import database, { schemaInspector } from '../database';
 import { Field } from '../types/field';
 import { Accountability, AbstractServiceOptions, FieldMeta, Relation, SchemaOverview } from '../types';
@@ -93,12 +94,10 @@ export class FieldsService {
 			aliasFields.push(...systemFieldRows);
 		}
 
-		const aliasTypes = ['alias', 'o2m', 'm2m', 'm2a', 'files', 'files', 'translations'];
-
 		aliasFields = aliasFields.filter((field) => {
 			const specials = toArray(field.special);
 
-			for (const type of aliasTypes) {
+			for (const type of ALIAS_TYPES) {
 				if (specials.includes(type)) return true;
 			}
 
@@ -121,14 +120,14 @@ export class FieldsService {
 
 		// Filter the result so we only return the fields you have read access to
 		if (this.accountability && this.accountability.admin !== true) {
-			const permissions = await this.knex
-				.select('collection', 'fields')
-				.from('directus_permissions')
-				.where({ role: this.accountability.role, action: 'read' });
+			const permissions = this.schema.permissions.filter((permission) => {
+				return permission.action === 'read';
+			});
+
 			const allowedFieldsInCollection: Record<string, string[]> = {};
 
 			permissions.forEach((permission) => {
-				allowedFieldsInCollection[permission.collection] = (permission.fields || '').split(',');
+				allowedFieldsInCollection[permission.collection] = permission.fields ?? [];
 			});
 
 			if (collection && allowedFieldsInCollection.hasOwnProperty(collection) === false) {
@@ -148,19 +147,13 @@ export class FieldsService {
 
 	async readOne(collection: string, field: string) {
 		if (this.accountability && this.accountability.admin !== true) {
-			const permissions = await this.knex
-				.select('fields')
-				.from('directus_permissions')
-				.where({
-					role: this.accountability.role,
-					collection,
-					action: 'read',
-				})
-				.first();
+			const permissions = this.schema.permissions.find((permission) => {
+				return permission.action === 'read' && permission.collection === collection;
+			});
 
-			if (!permissions) throw new ForbiddenException();
-			if (permissions.fields !== '*') {
-				const allowedFields = (permissions.fields || '').split(',');
+			if (!permissions || !permissions.fields) throw new ForbiddenException();
+			if (permissions.fields.includes('*') === false) {
+				const allowedFields = permissions.fields;
 				if (allowedFields.includes(field) === false) throw new ForbiddenException();
 			}
 		}
@@ -202,15 +195,15 @@ export class FieldsService {
 		}
 
 		// Check if field already exists, either as a column, or as a row in directus_fields
-		if (field.field in this.schema[collection].columns) {
+		if (field.field in this.schema.tables[collection].columns) {
 			throw new InvalidPayloadException(`Field "${field.field}" already exists in collection "${collection}"`);
 		} else if (
-			!!(await this.knex.select('id').from('directus_fields').where({ collection, field: field.field }).first())
+			!!this.schema.fields.find((fieldMeta) => fieldMeta.collection === collection && fieldMeta.field === field.field)
 		) {
 			throw new InvalidPayloadException(`Field "${field.field}" already exists in collection "${collection}"`);
 		}
 
-		if (field.schema) {
+		if (field.type && ALIAS_TYPES.includes(field.type) === false) {
 			if (table) {
 				this.addColumnToTable(table, field as Field);
 			} else {
@@ -246,11 +239,9 @@ export class FieldsService {
 		}
 
 		if (field.meta) {
-			const record = await database
-				.select<{ id: number }>('id')
-				.from('directus_fields')
-				.where({ collection, field: field.field })
-				.first();
+			const record = this.schema.fields.find(
+				(fieldMeta) => fieldMeta.field === field.field && fieldMeta.collection === collection
+			);
 
 			if (record) {
 				await this.itemsService.update(
@@ -285,17 +276,18 @@ export class FieldsService {
 
 		await this.knex('directus_fields').delete().where({ collection, field });
 
-		if (field in this.schema[collection].columns) {
+		if (field in this.schema.tables[collection].columns) {
 			await this.knex.schema.table(collection, (table) => {
 				table.dropColumn(field);
 			});
 		}
 
-		const relations = await this.knex
-			.select<Relation[]>('*')
-			.from('directus_relations')
-			.where({ many_collection: collection, many_field: field })
-			.orWhere({ one_collection: collection, one_field: field });
+		const relations = this.schema.relations.filter((relation) => {
+			return (
+				(relation.many_collection === collection && relation.many_field === field) ||
+				(relation.one_collection === collection && relation.one_field === field)
+			);
+		});
 
 		for (const relation of relations) {
 			const isM2O = relation.many_collection === collection && relation.many_field === field;
@@ -318,32 +310,37 @@ export class FieldsService {
 	}
 
 	public addColumnToTable(table: CreateTableBuilder, field: RawField | Field, alter: boolean = false) {
-		if (!field.schema) return;
-
 		let column: ColumnBuilder;
 
 		if (field.schema?.has_auto_increment) {
 			column = table.increments(field.field);
 		} else if (field.type === 'string') {
-			column = table.string(field.field, field.schema.max_length !== null ? field.schema.max_length : undefined);
+			column = table.string(field.field, field.schema?.max_length ?? undefined);
 		} else if (['float', 'decimal'].includes(field.type)) {
 			const type = field.type as 'float' | 'decimal';
 			column = table[type](field.field, field.schema?.numeric_precision || 10, field.schema?.numeric_scale || 5);
 		} else if (field.type === 'csv') {
 			column = table.string(field.field);
+		} else if (field.type === 'hash') {
+			column = table.string(field.field, 255);
 		} else {
 			column = table[field.type](field.field);
 		}
 
-		if (field.schema.default_value !== undefined) {
+		if (field.schema?.default_value !== undefined) {
 			if (typeof field.schema.default_value === 'string' && field.schema.default_value.toLowerCase() === 'now()') {
 				column.defaultTo(this.knex.fn.now());
+			} else if (
+				typeof field.schema.default_value === 'string' &&
+				['"null"', 'null'].includes(field.schema.default_value.toLowerCase())
+			) {
+				column.defaultTo(null);
 			} else {
 				column.defaultTo(field.schema.default_value);
 			}
 		}
 
-		if (field.schema.is_nullable !== undefined && field.schema.is_nullable === false) {
+		if (field.schema?.is_nullable !== undefined && field.schema.is_nullable === false) {
 			column.notNullable();
 		} else {
 			column.nullable();

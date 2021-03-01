@@ -11,6 +11,7 @@ role_name: Role Name
 db_only_click_to_configure: 'Database Only: Click to Configure '
 show_archived_items: Show Archived Items
 required: Required
+required_for_app_access: Required for App Access
 requires_value: Requires value
 create_preset: Create Preset
 create_role: Create Role
@@ -24,8 +25,11 @@ connection_excellent: Excellent Connection
 connection_good: Good Connection
 connection_fair: Fair Connection
 connection_poor: Poor Connection
+primary: Primary
 rename_folder: Rename Folder
 delete_folder: Delete Folder
+prefix: Prefix
+suffix: Suffix
 reset_bookmark: Reset Bookmark
 rename_bookmark: Rename Bookmark
 update_bookmark: Update Bookmark
@@ -50,8 +54,14 @@ archive_confirm: Are you sure you want to archive this item?
 archive_confirm_count: >-
   No Items Selected | Are you sure you want to archive this item? | Are you sure you want to archive these {count}
   items?
-reset_system_permissions: Reset System Permissions
-reset_system_permissions_copy: Reset all all system permissions to their defaults
+reset_system_permissions_to: 'Reset System Permissions to:'
+reset_system_permissions_copy:
+  This action will overwrite any custom permissions you may have applied to the system collections. Are you sure?
+the_following_are_minimum_permissions:
+  The following are minimum permissions required when "App Access" is enabled. You can extend permissions beyond this,
+  but not below.
+app_access_minimum: App Access Minimum
+recommended_defaults: Recommended Defaults
 unarchive: Unarchive
 unarchive_confirm: Are you sure you want to unarchive this item?
 nested_files_folders_will_be_moved: Nested files and folders will be moved one level up.
@@ -75,14 +85,14 @@ validationError:
 all_access: All Access
 no_access: No Access
 use_custom: Use Custom
-field_standard: Standard,
-field_presentation: Presentation & Aliases,
-field_file: Single File,
-field_files: Multiple Files,
-field_m2o: M2O Relationship,
-field_o2m: O2M Relationship,
-field_m2m: M2M Relationship,
-field_translations: Translations,
+field_standard: Standard
+field_presentation: Presentation & Aliases
+field_file: Single File
+field_files: Multiple Files
+field_m2o: M2O Relationship
+field_o2m: O2M Relationship
+field_m2m: M2M Relationship
+field_translations: Translations
 item_permissions: Item Permissions
 field_permissions: Field Permissions
 field_validation: Field Validation
@@ -114,7 +124,7 @@ schema_setup_title: How should this field save to the database?
 schema_field_title: How should this field behave in the app?
 create_field: Create Field
 creating_new_field: 'New Field ({collection})'
-updating_field_field: '{field} ({collection})'
+field_in_collection: '{field} ({collection})'
 reset_page_preferences: Reset Page Preferences
 hidden_field: Hidden Field
 hidden_on_detail: Hidden on Detail
@@ -134,6 +144,7 @@ text: Text
 time: Time
 timestamp: Timestamp
 uuid: UUID
+hash: Hash
 not_available_for_type: Not Available for this Type
 create_translations: Create Translations
 auto_generate: Auto-Generate
@@ -144,6 +155,9 @@ click_to_manage_translated_fields: >-
   There are no translated fields yet. Click here to create them. | There is one translated field. Click here to manage
   it. | There are {count} translated fields. Click here to manage them.
 fields_group: Fields Group
+new_data_alert: 'The following will be created within your Data Model:'
+new_field: 'New Field'
+new_collection: 'New Collection'
 configure_m2o: Configure your Many-to-One Relationship...
 configure_o2m: Configure your One-to-Many Relationship...
 configure_m2m: Configure your Many-to-Many Relationship...
@@ -155,7 +169,6 @@ choose_a_type: Choose a Type...
 determined_by_relationship: Determined by Relationship
 add_note: Add a helpful note for users...
 default_value: Default Value
-add_a_default_value: Add a default value...
 interface_setup_title: How will users interact with this field?
 display_setup_title: How should this field’s value be displayed?
 standard_field: Standard Field
@@ -175,6 +188,8 @@ length: Length
 precision_scale: Precision & Scale
 readonly: Readonly
 unique: Unique
+updated_on: Updated On
+updated_by: Updated By
 primary_key: Primary Key
 foreign_key: Foreign Key
 finish_setup: Finish Setup
@@ -352,6 +367,8 @@ collection_created: Collection Created
 modified_on: Modified On
 card_size: Card Size
 sort_field: Sort Field
+sort: Sort
+status: Status
 toggle_manual_sorting: Toggle Manual Sorting
 bookmark_doesnt_exist: Bookmark Doesn't Exist
 bookmark_doesnt_exist_copy: The bookmark you're trying to open couldn't be found.
@@ -404,6 +421,9 @@ delete_collection: Delete Collection
 update_collection_success: Updated Collection
 delete_collection_success: Deleted Collection
 start_end_of_count_items: '{start}-{end} of {count} items'
+start_end_of_count_filtered_items: '{start}-{end} of {count} filtered items'
+one_item: '1 item'
+one_filtered_item: '1 filtered item'
 delete_collection_are_you_sure: >-
   Are you sure you want to delete this collection? This will delete the collection and all items in it. This action is
   permanent.
@@ -457,6 +477,8 @@ upload_pending: Upload Pending
 drag_file_here: Drag & Drop a File Here
 click_to_browse: Click to Browse
 layout_options: Layout Options
+rows: Rows
+columns: Columns
 collection_setup: Collection Setup
 optional_system_fields: Optional System Fields
 value_unique: Value has to be unique
@@ -507,17 +529,19 @@ wysiwyg_options:
   strikethrough: Strikethrough
   subscript: Subscript
   superscript: Superscript
+  codeblock: Code
   blockquote: Blockquote
   bullist: Bullet List
   numlist: Numbered List
   hr: Horizontal Rule
-  link: Add Link
+  link: Link
   unlink: Remove Link
   media: Add Media
   image: Add Image
   copy: Copy
   cut: Cut
   paste: Paste
+  heading: Heading
   h1: Heading 1
   h2: Heading 2
   h3: Heading 3
@@ -602,7 +626,6 @@ page_help_users_item: >-
   **User Detail** — Manage your account information, or view the details of other users.
 activity_feed: Activity Feed
 add_new: Add New
-from_collection: 'From “{collection}” Collection'
 create_new: Create New
 all: All
 none: None
@@ -618,49 +641,68 @@ singleton_label: Treat as single object
 system_fields_locked: System fields are locked and can't be edited
 fields:
   directus_activity:
+    item: Item Primary Key
     action: Action
     collection: Collection
-    item: Item Primary Key
-    user: Action By
     timestamp: Action On
-    edited_on: Edited On
-    comment_deleted_on: Comment Deleted On
-    ip: IP Address
-    user_agent: User Agent
+    user: Action By
     comment: Comment
+    user_agent: User Agent
+    ip: IP Address
+    revisions: Revisions
   directus_collections:
+    collection: Collection
+    icon: Icon
+    note: Note
+    display_template: Display Template
+    hidden: Hidden
+    singleton: Singleton
     translations: Collection Name Translations
+    archive_app_filter: Archive App Filter
+    archive_value: Archive Value
+    unarchive_value: Unarchive Value
+    sort_field: Sort Field
   directus_files:
     title: Title
+    description: Description
     tags: Tags
     location: Location
-    description: Description
-    filename_download: Filename Download
-    filename_disk: Filename Disk
-    private_hash: Private Hash
-    checksum: Checksum
-    uploaded_on: Uploaded On
-    uploaded_by: Uploaded By
-    width: Width
-    height: Height
-    duration: Duration
-    filesize: Filesize
+    storage: Storage
+    filename_disk: Filename (Disk)
+    filename_download: Filename (Download)
     metadata: Metadata
+    type: Mime Type
+    filesize: Filesize
+    modified_by: Modified By
+    modified_on: Modified On
+    created_on: Created On
+    created_by: Created By
+    embed: Embed
+    uploaded_by: Uploaded By
+    folder: Folder
+    width: Width
+    uploaded_on: Uploaded On
+    height: Height
+    charset: Charset
+    duration: Duration
   directus_users:
-    status: Status
     first_name: First Name
     last_name: Last Name
     email: Email
-    email_notifications: Email Notifications
     password: Password
-    role: Role
-    company: Company
-    title: Title
-    timezone: Timezone
-    language: Language
     avatar: Avatar
+    location: Location
+    title: Title
+    description: Description
+    tags: Tags
+    language: Language
     theme: Theme
     tfa_secret: Two-Factor Authentication
+    status: Status
+    role: Role
+    token: Token
+    last_page: Last Page
+    last_access: Last Access
   directus_settings:
     project_name: Project Name
     project_url: Project URL
@@ -670,10 +712,10 @@ fields:
     public_background: Public Background
     public_note: Public Note
     auth_password_policy: Auth Password Policy
-    auth_idle_timeout: Auth Idle Timeout
     auth_login_attempts: Auth Login Attempts
     storage_asset_presets: Storage Asset Presets
     storage_asset_transform: Storage Asset Transform
+    custom_css: Custom CSS
   directus_fields:
     collection: Collection Name
     icon: Collection Icon
@@ -686,9 +728,9 @@ fields:
     name: Role Name
     icon: Role Icon
     description: Description
-    ip_access: IP Access
     app_access: App Access
     admin_access: Admin Access
+    ip_access: IP Access
     enforce_tfa: Require 2FA
     users: Users in Role
     module_list: Module Navigation
@@ -699,6 +741,8 @@ generate_and_save_uuid: Generate and Save UUID
 save_current_user_id: Save Current User ID
 save_current_user_role: Save Current User Role
 save_current_datetime: Save Current Date/Time
+block: Block
+inline: Inline
 comment: Comment
 continue: Continue
 continue_as: >-
@@ -764,6 +808,15 @@ view_project: View Project
 weeks: {}
 report_error: Report Error
 interfaces:
+  button-links:
+    button-links: Button Links
+    links: Links
+    description: Configurable link buttons for launching dynamic URLs
+    style: Style
+    primary: Primary
+    link: Links
+    button: Buttons
+    error: Cannot perform action
   checkboxes:
     checkboxes: Checkboxes
     description: Choose between multiple options via checkboxes
@@ -808,6 +861,8 @@ interfaces:
     title_placeholder: Enter a title...
     inline_title: Inline Title
     inline_title_label: Show title inside line
+    margin_top: Margin Top
+    margin_top_label: Increase Top Margin
   dropdown:
     description: Select a value from a dropdown
     choices_placeholder: Add a new choice
@@ -855,10 +910,12 @@ interfaces:
   markdown:
     markdown: Markdown
     description: Enter and preview markdown
-    tabbed: Tabbed
-    tabbed_label: Show preview in separate tab
-    edit: Edit
-    preview: Preview
+    customSyntax: Custom Blocks
+    customSyntax_label: Add custom syntax types
+    customSyntax_add: Add custom syntax
+    box: Block / Inline
+    imageToken: Image Token
+    imageToken_label: What (static) token to append to image sources
   notice:
     notice: Notice
     description: Display a short notice
@@ -911,6 +968,8 @@ interfaces:
     trim_label: Trim the start and end
     mask: Masked
     mask_label: Hide the real value
+    nullable: Nullable
+    nullable_label: Save empty value as NULL
   textarea:
     textarea: Textarea
     description: Enter multiline plain-text
@@ -961,7 +1020,7 @@ displays:
     description: Display values related to time
     format: Format
     format_note: >-
-      The custom format accetps the __[Date Field Symbol
+      The custom format accepts the __[Date Field Symbol
       Table](https://www.unicode.org/reports/tr35/tr35-dates.html#Date_Field_Symbol_Table)__
     long: Long
     short: Short

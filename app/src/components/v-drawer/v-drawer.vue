@@ -58,7 +58,7 @@
 <script lang="ts">
 import { defineComponent, ref, computed, provide } from '@vue/composition-api';
 import HeaderBar from '@/views/private/components/header-bar/header-bar.vue';
-import i18n from '../../lang';
+import i18n from '@/lang';
 
 export default defineComponent({
 	components: {
@@ -156,10 +156,19 @@ body {
 	}
 
 	.content {
+		--border-radius: 6px;
+		--input-height: 60px;
+		--input-padding: 16px; // (60 - 4 - 24) / 2
+		--form-vertical-gap: 52px;
+
 		position: relative;
 		display: flex;
 		flex-grow: 1;
 		overflow: hidden;
+
+		// Page Content Spacing (Could be converted to Project Setting toggle)
+		font-size: 15px;
+		line-height: 24px;
 
 		.sidebar {
 			display: none;

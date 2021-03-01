@@ -12,6 +12,7 @@ import { toArray } from '../utils/to-array';
 import { extension } from 'mime-types';
 import path from 'path';
 import env from '../env';
+import logger from '../logger';
 
 export class FilesService extends ItemsService {
 	constructor(options: AbstractServiceOptions) {
@@ -50,31 +51,61 @@ export class FilesService extends ItemsService {
 		if (['image/jpeg', 'image/png', 'image/webp'].includes(payload.type)) {
 			const pipeline = sharp();
 
-			pipeline.metadata().then((meta) => {
-				payload.width = meta.width;
-				payload.height = meta.height;
-				payload.filesize = meta.size;
-				payload.metadata = {};
+			pipeline
+				.metadata()
+				.then((meta) => {
+					payload.width = meta.width;
+					payload.height = meta.height;
+					payload.filesize = meta.size;
+					payload.metadata = {};
 
-				if (meta.icc) {
-					payload.metadata.icc = parseICC(meta.icc);
-				}
+					if (meta.icc) {
+						try {
+							payload.metadata.icc = parseICC(meta.icc);
+						} catch (err) {
+							logger.warn(`Couldn't extract ICC information from file`);
+							logger.warn(err);
+						}
+					}
 
-				if (meta.exif) {
-					payload.metadata.exif = parseEXIF(meta.exif);
-				}
+					if (meta.exif) {
+						try {
+							payload.metadata.exif = parseEXIF(meta.exif);
+						} catch (err) {
+							logger.warn(`Couldn't extract EXIF information from file`);
+							logger.warn(err);
+						}
+					}
 
-				if (meta.iptc) {
-					payload.metadata.iptc = parseIPTC(meta.iptc);
-
-					payload.title = payload.title || payload.metadata.iptc.headline;
-					payload.description = payload.description || payload.metadata.iptc.caption;
-				}
-			});
-
-			await storage.disk(data.storage).put(payload.filename_disk, stream.pipe(pipeline));
+					if (meta.iptc) {
+						try {
+							payload.metadata.iptc = parseIPTC(meta.iptc);
+							payload.title = payload.title || payload.metadata.iptc.headline;
+							payload.description = payload.description || payload.metadata.iptc.caption;
+						} catch (err) {
+							logger.warn(`Couldn't extract IPTC information from file`);
+							logger.warn(err);
+						}
+					}
+				})
+				.catch((err) => {
+					logger.warn(`Couldn't extract file metadata from ${payload.filename_disk}`);
+					logger.warn(err);
+				});
+			try {
+				await storage.disk(data.storage).put(payload.filename_disk, stream.pipe(pipeline));
+			} catch (err) {
+				logger.warn(`Couldn't save file ${payload.filename_disk}`);
+				logger.warn(err);
+			}
 		} else {
-			await storage.disk(data.storage).put(payload.filename_disk, stream);
+			try {
+				await storage.disk(data.storage).put(payload.filename_disk, stream);
+			} catch (err) {
+				logger.warn(`Couldn't save file ${payload.filename_disk}`);
+				logger.warn(err);
+			}
+
 			const { size } = await storage.disk(data.storage).getStat(payload.filename_disk);
 			payload.filesize = size;
 		}
@@ -104,6 +135,8 @@ export class FilesService extends ItemsService {
 			throw new ForbiddenException();
 		}
 
+		await super.delete(keys);
+
 		files = toArray(files);
 
 		for (const file of files) {
@@ -114,8 +147,6 @@ export class FilesService extends ItemsService {
 				await disk.delete(path);
 			}
 		}
-
-		await super.delete(keys);
 
 		if (cache && env.CACHE_AUTO_PURGE) {
 			await cache.clear();

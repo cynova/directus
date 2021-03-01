@@ -1,21 +1,12 @@
 import { QueryBuilder } from 'knex';
 import { Query, Filter, Relation, SchemaOverview } from '../types';
-import Knex from 'knex';
 import { clone, isPlainObject } from 'lodash';
 import { systemRelationRows } from '../database/system-data/relations';
 import { nanoid } from 'nanoid';
+import getLocalType from './get-local-type';
+import validate from 'uuid-validate';
 
-export default async function applyQuery(
-	knex: Knex,
-	collection: string,
-	dbQuery: QueryBuilder,
-	query: Query,
-	schema: SchemaOverview
-) {
-	if (query.filter) {
-		await applyFilter(knex, dbQuery, query.filter, collection);
-	}
-
+export default function applyQuery(collection: string, dbQuery: QueryBuilder, query: Query, schema: SchemaOverview) {
 	if (query.sort) {
 		dbQuery.orderBy(query.sort);
 	}
@@ -36,24 +27,17 @@ export default async function applyQuery(
 		dbQuery.limit(1).first();
 	}
 
-	if (query.search) {
-		const columns = Object.values(schema[collection].columns);
+	if (query.filter) {
+		applyFilter(schema, dbQuery, query.filter, collection);
+	}
 
-		dbQuery.andWhere(function () {
-			columns
-				/** @todo Check if this scales between SQL vendors */
-				.filter(
-					(column) => column.data_type.toLowerCase().includes('text') || column.data_type.toLowerCase().includes('char')
-				)
-				.forEach((column) => {
-					this.orWhereRaw(`LOWER(??) LIKE ?`, [column.column_name, `%${query.search!}%`]);
-				});
-		});
+	if (query.search) {
+		applySearch(schema, dbQuery, query.search, collection);
 	}
 }
 
-export async function applyFilter(knex: Knex, rootQuery: QueryBuilder, rootFilter: Filter, collection: string) {
-	const relations: Relation[] = [...(await knex.select('*').from('directus_relations')), ...systemRelationRows];
+export function applyFilter(schema: SchemaOverview, rootQuery: QueryBuilder, rootFilter: Filter, collection: string) {
+	const relations: Relation[] = [...schema.relations, ...systemRelationRows];
 
 	const aliasMap: Record<string, string> = {};
 
@@ -63,6 +47,11 @@ export async function applyFilter(knex: Knex, rootQuery: QueryBuilder, rootFilte
 	function addJoins(dbQuery: QueryBuilder, filter: Filter, collection: string) {
 		for (const [key, value] of Object.entries(filter)) {
 			if (key === '_or' || key === '_and') {
+				// If the _or array contains an empty object (full permissions), we should short-circuit and ignore all other
+				// permission checks, as {} already matches full permissions.
+				if (key === '_or' && value.some((subFilter: Record<string, any>) => Object.keys(subFilter).length === 0))
+					continue;
+
 				value.forEach((subFilter: Record<string, any>) => {
 					addJoins(dbQuery, subFilter, collection);
 				});
@@ -125,8 +114,13 @@ export async function applyFilter(knex: Knex, rootQuery: QueryBuilder, rootFilte
 	function addWhereClauses(dbQuery: QueryBuilder, filter: Filter, collection: string, logical: 'and' | 'or' = 'and') {
 		for (const [key, value] of Object.entries(filter)) {
 			if (key === '_or' || key === '_and') {
+				// If the _or array contains an empty object (full permissions), we should short-circuit and ignore all other
+				// permission checks, as {} already matches full permissions.
+				if (key === '_or' && value.some((subFilter: Record<string, any>) => Object.keys(subFilter).length === 0))
+					continue;
+
 				/** @NOTE this callback function isn't called until Knex runs the query */
-				dbQuery.where((subQuery) => {
+				dbQuery[logical].where((subQuery) => {
 					value.forEach((subFilter: Record<string, any>) => {
 						addWhereClauses(subQuery, subFilter, collection, key === '_and' ? 'and' : 'or');
 					});
@@ -266,6 +260,36 @@ export async function applyFilter(knex: Knex, rootQuery: QueryBuilder, rootFilte
 			}
 		}
 	}
+}
+
+export async function applySearch(
+	schema: SchemaOverview,
+	dbQuery: QueryBuilder,
+	searchQuery: string,
+	collection: string
+) {
+	const columns = Object.values(schema.tables[collection].columns);
+
+	dbQuery.andWhere(function () {
+		columns
+			.map((column) => ({
+				...column,
+				localType: getLocalType(column),
+			}))
+			.forEach((column) => {
+				if (['text', 'string'].includes(column.localType)) {
+					this.orWhereRaw(`LOWER(??) LIKE ?`, [
+						`${column.table_name}.${column.column_name}`,
+						`%${searchQuery.toLowerCase()}%`,
+					]);
+				} else if (['bigInteger', 'integer', 'decimal', 'float'].includes(column.localType)) {
+					const number = Number(searchQuery);
+					if (!isNaN(number)) this.orWhere({ [`${column.table_name}.${column.column_name}`]: number });
+				} else if (column.localType === 'uuid' && validate(searchQuery)) {
+					this.orWhere({ [`${column.table_name}.${column.column_name}`]: searchQuery });
+				}
+			});
+	});
 }
 
 function getFilterPath(key: string, value: Record<string, any>) {

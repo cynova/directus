@@ -84,6 +84,10 @@ export default defineComponent({
 			type: [String, Number],
 			default: null,
 		},
+		nullable: {
+			type: Boolean,
+			default: true,
+		},
 		slug: {
 			type: Boolean,
 			default: false,
@@ -197,6 +201,11 @@ export default defineComponent({
 		function emitValue(event: InputEvent) {
 			let value = (event.target as HTMLInputElement).value;
 
+			if (props.nullable === true && !value) {
+				emit('input', null);
+				return;
+			}
+
 			if (props.type === 'number') {
 				emit('input', Number(value));
 			} else {
@@ -273,6 +282,8 @@ body {
 		align-items: center;
 		height: 100%;
 		padding: var(--input-padding);
+		padding-top: 0px;
+		padding-bottom: 0px;
 		color: var(--v-input-color);
 		font-family: var(--v-input-font-family);
 		background-color: var(--background-page);
@@ -352,6 +363,9 @@ body {
 		flex-grow: 1;
 		width: 20px; // allows flex to grow/shrink to allow for slots
 		height: 100%;
+		padding: var(--input-padding);
+		padding-right: 0px;
+		padding-left: 0px;
 		font-family: var(--v-input-font-family);
 		background-color: transparent;
 		border: none;

@@ -12,6 +12,7 @@
 				<v-input
 					:class="{ matches: junctionCollectionExists }"
 					v-model="junctionCollection"
+					:nullable="false"
 					:placeholder="$t('collection') + '...'"
 					:disabled="autoFill || isExisting"
 					db-safe
@@ -65,6 +66,7 @@
 					:autofocus="autoFill"
 					:class="{ matches: relatedCollectionExists }"
 					v-model="relations[1].one_collection"
+					:nullable="false"
 					:placeholder="$t('collection') + '...'"
 					:disabled="type === 'files' || isExisting"
 					db-safe
@@ -116,6 +118,7 @@
 			<v-input
 				:class="{ matches: junctionFieldExists(relations[0].many_field) }"
 				v-model="relations[0].many_field"
+				:nullable="false"
 				:placeholder="$t('foreign_key') + '...'"
 				:disabled="autoFill || isExisting"
 				db-safe
@@ -152,6 +155,7 @@
 			<v-input
 				:class="{ matches: junctionFieldExists(relations[1].many_field) }"
 				v-model="relations[1].many_field"
+				:nullable="false"
 				:placeholder="$t('foreign_key') + '...'"
 				:disabled="autoFill || isExisting"
 				db-safe
@@ -187,6 +191,7 @@
 				db-safe
 				:disabled="relatedCollectionExists"
 				v-model="relations[1].one_primary"
+				:nullable="false"
 				:placeholder="$t('primary_key') + '...'"
 			/>
 			<div class="spacer" />
@@ -213,6 +218,19 @@
 			</div>
 			<v-icon name="arrow_forward" class="arrow" />
 		</div>
+
+		<v-notice class="generated-data" v-if="generationInfo.length > 0" type="warning">
+			<span>
+				{{ $t('new_data_alert') }}
+
+				<ul>
+					<li v-for="(data, index) in generationInfo" :key="index">
+						<span class="field-name">{{ data.name }}</span>
+						({{ $t(data.isField ? 'new_field' : 'new_collection') }})
+					</li>
+				</ul>
+			</span>
+		</v-notice>
 	</div>
 </template>
 
@@ -306,6 +324,44 @@ export default defineComponent({
 
 		const { hasCorresponding, correspondingField, correspondingLabel } = useCorresponding();
 
+		const generationInfo = computed(() => {
+			const message: { name: string; isField: boolean }[] = [];
+
+			if (state.relations[1].one_collection !== '') {
+				if (relatedCollectionExists.value === false) {
+					message.push({ name: state.relations[1].one_collection, isField: false });
+
+					if (state.relations[1].one_primary !== '')
+						message.push({
+							name: state.relations[1].one_collection + '.' + state.relations[1].one_primary,
+							isField: true,
+						});
+				}
+
+				if (hasCorresponding.value === true && correspondingField.value !== null)
+					message.push({ name: state.relations[1].one_collection + '.' + correspondingField.value, isField: true });
+			}
+
+			if (state.relations[0].many_collection) {
+				if (junctionCollectionExists.value === false)
+					message.push({ name: state.relations[0].many_collection, isField: false });
+
+				if (junctionFieldExists(state.relations[0].many_field) === false && state.relations[0].many_field !== '')
+					message.push({
+						name: state.relations[0].many_collection + '.' + state.relations[0].many_field,
+						isField: true,
+					});
+
+				if (junctionFieldExists(state.relations[1].many_field) === false && state.relations[1].many_field !== '')
+					message.push({
+						name: state.relations[0].many_collection + '.' + state.relations[1].many_field,
+						isField: true,
+					});
+			}
+
+			return message;
+		});
+
 		return {
 			relations: state.relations,
 			autoFill,
@@ -319,6 +375,7 @@ export default defineComponent({
 			hasCorresponding,
 			correspondingField,
 			correspondingLabel,
+			generationInfo,
 		};
 
 		function junctionFieldExists(fieldKey: string) {
@@ -332,10 +389,7 @@ export default defineComponent({
 					return !!state.newFields.find((field: any) => field.$type === 'corresponding');
 				},
 				set(enabled: boolean) {
-					if (
-						enabled === true &&
-						!!state.newFields.find((field: any) => field.$type === 'corresponding') === false
-					) {
+					if (enabled === true && !!state.newFields.find((field: any) => field.$type === 'corresponding') === false) {
 						state.newFields = [
 							...state.newFields,
 							{
@@ -456,5 +510,18 @@ export default defineComponent({
 
 .v-notice {
 	margin-bottom: 36px;
+}
+
+.generated-data {
+	margin-top: 36px;
+
+	ul {
+		padding-top: 4px;
+		padding-left: 24px;
+	}
+
+	.field-name {
+		font-family: var(--family-monospace);
+	}
 }
 </style>

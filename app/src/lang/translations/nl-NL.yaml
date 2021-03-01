@@ -50,8 +50,6 @@ archive: Archiveren
 archive_confirm: Weet je zeker dat je dit item wilt archiveren?
 archive_confirm_count: >-
   Geen Items Geselecteerd | Weet je zeker dat je dit item wilt archiveren? | Weet je zeker dat je deze {count} items wilt archiveren?
-reset_system_permissions: Reset Systeem Permissies
-reset_system_permissions_copy: Reset alle systeem permissies
 unarchive: Terugzetten
 unarchive_confirm: Weet je zeker dat je dit item wilt terugzetten?
 nested_files_folders_will_be_moved: Bestanden en mappen in deze map zullen een map omhoog worden geplaatst.
@@ -75,6 +73,14 @@ validationError:
 all_access: Alle toegang
 no_access: Geen toegang
 use_custom: Gebruik aangepaste
+field_standard: Standaard
+field_presentation: Presentatie & Aliasen
+field_file: Enkel bestand
+field_files: Meerdere bestanden
+field_m2o: M2O Relatie
+field_o2m: O2M Relatie
+field_m2m: M2M Relatie
+field_translations: Vertalingen
 item_permissions: Item Permissies
 field_permissions: Veld Permissies
 field_validation: Veld Validatie
@@ -106,7 +112,6 @@ schema_setup_title: Hoe moet dit veld worden opgeslagen in de database?
 schema_field_title: Hoe moet dit veld zich gedragen in de app?
 create_field: Maak veld
 creating_new_field: 'Nieuw veld ({collection})'
-updating_field_field: '{field} ({collection})'
 reset_page_preferences: Pagina-voorkeuren resetten
 hidden_field: Verborgen veld
 hidden_on_detail: Verborgen op het detail scherm
@@ -126,6 +131,7 @@ text: Tekst
 time: Tijd
 timestamp: Timestamp
 uuid: UUID
+hash: Hash
 not_available_for_type: Niet beschikbaar voor dit type
 create_translations: Vertalingen aanmaken
 auto_generate: Genereer automatisch
@@ -146,7 +152,6 @@ choose_a_type: Kies een type...
 determined_by_relationship: Bepaald door relatie
 add_note: Voeg een hint toe voor de eindgebruiker...
 default_value: Standaardwaarde
-add_a_default_value: Voeg een standaardwaarde toe...
 interface_setup_title: Hoe zullen gebruikers omgaan met dit veld?
 display_setup_title: Hoe moet de waarde van dit veld worden weergegeven?
 standard_field: Standaard veld
@@ -269,6 +274,9 @@ background_color: Achtergrond kleur
 upload_from_device: Bestand uploaden van apparaat
 choose_from_library: Kies bestand uit de bibliotheek
 import_from_url: Importeer bestand van URL
+replace_from_device: Vervang bestand met nieuwe upload
+replace_from_library: Vervang bestand met bestaande
+replace_from_url: Vervang bestand via een URL import
 no_file_selected: Geen bestand geselecteerd
 download_file: Download bestand
 collection_key: Collectie Key
@@ -292,6 +300,7 @@ no_comments: Nog geen reacties
 click_to_expand: Klik om uit te breiden
 select_item: Selecteer Item
 no_items: Geen items
+search_items: Zoek items...
 disabled: Uitgeschakeld
 information: Informatie
 report_bug: Bug melden
@@ -339,6 +348,7 @@ collection_created: Collectie aangemaakt
 modified_on: Aangepast op
 card_size: Kaart grootte
 sort_field: Sorteerveld
+status: Status
 toggle_manual_sorting: Activeer handmatige volgorde
 bookmark_doesnt_exist: Bladwijzer bestaat niet
 bookmark_doesnt_exist_copy: De bladwijzer die je probeert te openen kon niet worden gevonden.
@@ -411,6 +421,8 @@ circle: Cirkel
 empty_item: Leeg item
 log_in_with: 'Log in met {provider}'
 advanced_filter: Geavanceerd filter
+delete_advanced_filter: Verwijder filter
+change_advanced_filter_operator: Vervang operatie
 operators:
   eq: Gelijk aan
   neq: Niet gelijk aan
@@ -491,11 +503,11 @@ wysiwyg_options:
   strikethrough: Doorhalen
   subscript: Subscript
   superscript: Superscript
+  codeblock: Code
   blockquote: Citaat
   bullist: Opsomming
   numlist: Genummerde lijst
   hr: Horizontale lijn
-  link: Voeg Link Toe
   unlink: Link verwijderen
   media: Media toevoegen
   image: Afbeelding toevoegen
@@ -563,13 +575,13 @@ page_help_files_collection: >-
   **Bestandsbibliotheek** - Toont alle bestanden die naar dit project zijn geüpload. Pas layout, filters en sortering aan om je weergave aan te passen en sla bladwijzers van deze verschillende configuraties op voor snelle toegang.
 page_help_files_item: >-
   **Bestandsdetail** - Een formulier voor het beheren van metagegevens van bestanden, het bewerken van het originele bestand en het bijwerken van toegangsinstellingen.
-page_help_settings_project: '**Projectinstellingen** - De algemene configuratieopties van je project.'
+page_help_settings_project: "**Projectinstellingen** - De algemene configuratieopties van je project."
 page_help_settings_datamodel_collections: >-
   **Gegevensmodel: Collecties** — Laat alle beschikbare collecties zien. Dit omvat zichtbare, verborgen en systeemcollecties, evenals niet beheerde databasetabellen die kunnen worden toegevoegd.
 page_help_settings_datamodel_fields: >-
   **Gegevensmodel: Verzameling** - Een formulier voor het beheren van deze collectie en haar velden.
 page_help_settings_roles_collection: '**Blader door rollen** — Laat de Admin, Publieke en aangepaste gebruikersrollen zien.'
-page_help_settings_roles_item: '**Rol Detail** - Beheer de rechten van de rol en andere instellingen.'
+page_help_settings_roles_item: "**Rol Detail** - Beheer de rechten van de rol en andere instellingen."
 page_help_settings_presets_collection: >-
   **Browse Voorkeuren** — Bewaart alle voorkeuren in dit project, inclusief: gebruikers, rol, en globale voorkeuren en standaard views.
 page_help_settings_presets_item: >-
@@ -581,9 +593,10 @@ page_help_users_item: >-
   **Gebruikersdetail** — Beheer je accountgegevens, of bekijk de details van andere gebruikers.
 activity_feed: Activiteiten
 add_new: Nieuw Toevoegen
-from_collection: 'Van "{collection}" Collectie'
 create_new: Nieuwe aanmaken
 all: Alle
+none: Geen
+no_layout_collection_selected_yet: Geen layout/collectie geselecteerd
 batch_delete_confirm: >-
   Geen items geselecteerd | Weet je zeker dat je dit item wilt verwijderen? Dit kan niet ongedaan gemaakt worden. | Weet je zeker dat je {count} items wilt verwijderen? Dit kan niet ongedaan gemaakt worden.
 cancel: Annuleer
@@ -594,49 +607,59 @@ singleton_label: Behandel als één object
 system_fields_locked: Systeem velden zijn vergrendeld en kunnen niet worden bewerkt
 fields:
   directus_activity:
+    item: Item Primary Key
     action: Actie
     collection: Collectie
-    item: Item Primary Key
-    user: Actie door
     timestamp: Actie op
-    edited_on: Aangepast op
-    comment_deleted_on: Reactie verwijderd op
-    ip: IP Adres
-    user_agent: User Agent
+    user: Actie door
     comment: Reactie
+    user_agent: User Agent
+    ip: IP Adres
+    revisions: Revisies
   directus_collections:
+    collection: Collectie
+    icon: Icoon
+    note: Notitie
+    display_template: Weergavesjabloon
+    hidden: Verborgen
+    singleton: Singleton
     translations: Collectie-naam vertalingen
+    sort_field: Sorteerveld
   directus_files:
     title: Titel
+    description: Beschrijving
     tags: Tags
     location: Locatie
-    description: Beschrijving
-    filename_download: Bestandsnaam Download
-    filename_disk: Bestandsnaam op Schijf
-    private_hash: Privé naam
-    checksum: Checksum
-    uploaded_on: Geüpload op
-    uploaded_by: Geüpload door
-    width: Breedte
-    height: Hoogte
-    duration: Duur
-    filesize: Bestandsgrootte
     metadata: Metadata
+    filesize: Bestandsgrootte
+    modified_on: Aangepast op
+    created_on: Aangemaakt op
+    created_by: Aangemaakt door
+    embed: Insluiten
+    uploaded_by: Geüpload door
+    folder: Map
+    width: Breedte
+    uploaded_on: Geüpload op
+    height: Hoogte
+    charset: Karakterset
+    duration: Duur
   directus_users:
-    status: Status
     first_name: Voornaam
     last_name: Achternaam
     email: Email
-    email_notifications: Email Notificaties
     password: Wachtwoord
-    role: Rol
-    company: Bedrijf
-    title: Titel
-    timezone: Tijdszone
-    language: Taal
     avatar: Profielafbeelding
+    location: Locatie
+    title: Titel
+    description: Beschrijving
+    tags: Tags
+    language: Taal
     theme: Thema
     tfa_secret: 2FA (Twee-Factor Authenticatie)
+    status: Status
+    role: Rol
+    last_page: Laatste pagina
+    last_access: Laatste toegang
   directus_settings:
     project_name: Project Naam
     project_url: Project URL
@@ -646,7 +669,6 @@ fields:
     public_background: Openbare achtergrond
     public_note: Openbare notitie
     auth_password_policy: Wachtwoordbeleid
-    auth_idle_timeout: Idle Time-out
     auth_login_attempts: Login pogingen
     storage_asset_presets: Bestand Voorkeuren
     storage_asset_transform: Storage Asset Transform
@@ -662,9 +684,9 @@ fields:
     name: Rol Naam
     icon: Rol Icoon
     description: Beschrijving
-    ip_access: IP Toegang
     app_access: App toegang
     admin_access: Admin toegang
+    ip_access: IP Toegang
     enforce_tfa: 2FA vereist
     users: Gebruikers in rol
     module_list: Module Navigatie
@@ -731,6 +753,8 @@ sign_out: Log out
 sign_out_confirm: Weet je zeker dat je uit wilt loggen?
 something_went_wrong: Iets ging mis.
 sort_direction: Sorteerrichting
+sort_asc: Sorteer Oplopend
+sort_desc: Sorteer Aflopend
 template: Sjabloon
 translation: Vertaling
 value: Waarde
@@ -828,10 +852,6 @@ interfaces:
   markdown:
     markdown: Markdown
     description: Markdown invoeren en bekijken
-    tabbed: Tabbladen
-    tabbed_label: Voorbeeld weergeven in apart tabblad
-    edit: Wijzig
-    preview: Voorvertoning
   notice:
     notice: Melding
     description: Een korte melding weergeven
@@ -933,8 +953,6 @@ displays:
     datetime: Datum/tijd
     description: Toon waarden gerelateerd aan tijd
     format: Format
-    format_note: >-
-      Het aangepaste formaat werkt met de __[Date Field Symbols](https://www.unicode.org/reports/tr35/tr35-dates.html#Date_Field_Symbol_Table)__
     long: Lang
     short: Kort
     relative: Relatief

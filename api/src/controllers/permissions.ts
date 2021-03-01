@@ -1,8 +1,7 @@
 import express from 'express';
-import asyncHandler from 'express-async-handler';
+import asyncHandler from '../utils/async-handler';
 import { PermissionsService, MetaService } from '../services';
-import { clone } from 'lodash';
-import { InvalidCredentialsException, ForbiddenException, InvalidPayloadException } from '../exceptions';
+import { ForbiddenException, InvalidPayloadException } from '../exceptions';
 import useCollection from '../middleware/use-collection';
 import { respond } from '../middleware/respond';
 import { PrimaryKey } from '../types';
@@ -42,6 +41,7 @@ router.get(
 			accountability: req.accountability,
 			schema: req.schema,
 		});
+
 		const metaService = new MetaService({
 			accountability: req.accountability,
 			schema: req.schema,
@@ -51,31 +51,6 @@ router.get(
 		const meta = await metaService.getMetaForQuery('directus_permissions', req.sanitizedQuery);
 
 		res.locals.payload = { data: item || null, meta };
-		return next();
-	}),
-	respond
-);
-
-router.get(
-	'/me',
-	asyncHandler(async (req, res, next) => {
-		if (!req.accountability?.user) {
-			throw new InvalidCredentialsException();
-		}
-
-		const service = new PermissionsService({ schema: req.schema });
-		const query = clone(req.sanitizedQuery || {});
-
-		query.filter = {
-			...(query.filter || {}),
-			role: {
-				_eq: req.accountability.role,
-			},
-		};
-
-		const items = await service.readByQuery(req.sanitizedQuery);
-
-		res.locals.payload = { data: items || null };
 		return next();
 	}),
 	respond
