@@ -130,17 +130,10 @@ export default defineComponent({
 			getJunctionItem,
 			getJunctionFromRelatedId,
 		} = useActions(value, relationInfo, emitter);
-		const { deleteItem, getUpdatedItems, getNewItems, getPrimaryKeys, getNewSelectedItems } = useActions(
-			value,
-			relationInfo,
-			emitter
-		);
 
 		const { tableHeaders: tableHeadersWithHidden, items, loading, error } = usePreview(
 			value,
 			adjustedFields,
-			sortField,
-			fields,
 			relationInfo,
 			getNewSelectedItems,
 			getUpdatedItems,
@@ -160,15 +153,11 @@ export default defineComponent({
 
 		const { stageSelection, selectModalActive, selectionFilters } = useSelection(value, items, relationInfo, emitter);
 
-<<<<<<< HEAD
-		const { sort, sortItems, sortedItems } = useSort(sortField, adjustedFields, items, emitter);
+		const { sort, sortItems, sortedItems } = useSort(relationInfo, fields, items, emitter);
 
 		const tableHeaders = computed(() => {
 			return tableHeadersWithHidden.value.filter((header) => fields.value.includes(header.value));
 		});
-=======
-		const { sort, sortItems, sortedItems } = useSort(relationInfo, fields, items, emitter);
->>>>>>> upstream/main
 
 		return {
 			junction,
