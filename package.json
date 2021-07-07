@@ -14,7 +14,7 @@
 		"format": "prettier --write \"**/*.{js,ts,vue,md,yaml}\"",
 		"dev": "lerna run dev --stream --parallel",
 		"build": "lerna run build",
-		"release": "lerna publish --force-publish --exact",
+		"release": "lerna publish --force-publish --exact from-git",
 		"test": "lerna run test",
 		"test:e2e": "jest tests -c tests/jest.config.js",
 		"test:e2e:watch": "npm run test:e2e -- --watch",
