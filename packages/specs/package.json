@@ -1,6 +1,6 @@
 {
 	"name": "@directus/specs",
-	"version": "9.0.1-rctest.0",
+	"version": "9.0.2-rctest.0",
 	"description": "OpenAPI Specification of the Directus API",
 	"main": "index.js",
 	"scripts": {
