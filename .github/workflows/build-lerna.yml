@@ -1,4 +1,4 @@
-name: build-images
+name: build-lerna
 
 on: push
 #on:
@@ -15,4 +15,6 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '16.x'
-      - run: npm run build
+      - run: |
+          npm ci
+          npm run build
