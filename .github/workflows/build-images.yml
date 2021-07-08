@@ -1,9 +1,6 @@
 name: build-images
 
-on: release
-#  release:
-#    types:
-#      - published
+on: push
 
 jobs:
   lerna:
