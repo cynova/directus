@@ -7,12 +7,20 @@ ARG REPOSITORY=directus/directus
 # Get runtime dependencies from optional dependencies
 # defined in package.json of Directus API package
 WORKDIR /directus
+
+COPY ./api/package.json directus-api-package.json
+
 RUN apk add --no-cache jq \
-  && wget -O directus-api-package.json "https://raw.githubusercontent.com/${REPOSITORY}/${VERSION}/api/package.json" \
   && jq '{ \
   name: "directus-project", \
   version: "1.0.0", \
   description: "Directus Project", \
+  "workspaces": [ \
+		"./app", \
+		"./api", \
+		"./docs", \
+		"./packages/*" \
+	], \
   dependencies: .optionalDependencies \
   }' \
   directus-api-package.json > package.json
@@ -76,22 +84,35 @@ USER node
 WORKDIR /directus
 
 # Get package.json from builder image
+#COPY --chown=node:node package*.json ./
+COPY --chown=node:node lerna.json ./
+COPY --chown=node:node /api ./api
+COPY --chown=node:node /app ./app
+COPY --chown=node:node /packages ./packages
+COPY --chown=node:node /docs ./docs
 COPY --from=builder --chown=node:node /directus/package.json .
+
+#RUN cd src && npx lerna link
+
+#COPY --chown=node:node /api/dist ./node_modules/directus
+#COPY --chown=node:node /api/node_modules_nolinks ./node_modules/directus/node_modules
+#COPY --chown=node:node /api/package.json ./node_modules/directus/package.json
 
 RUN \
   # Install Directus and runtime dependencies
   # (retry if it fails for some reason, e.g. release not published yet)
-  for i in $(seq 15); do npm install "directus@${VERSION}" && break || if [ $i -eq 15 ]; then exit 1; else sleep 30; fi; done && \
-  npm install \
+  #npm i \
+  #npm i nanoid \
   # Create data directories
-  && mkdir -p \
+  mkdir -p \
     database \
     extensions/displays \
     extensions/interfaces \
     extensions/layouts \
     extensions/modules \
-    uploads
-
+    uploads && \
+  npm install --only=production && \
+  npx --yes lerna link
 # Expose data directories as volumes
 VOLUME \
   /directus/database \
@@ -99,7 +120,9 @@ VOLUME \
   /directus/uploads
 
 # Copy rootfs files
-COPY ./rootfs /
+COPY ./docker/rootfs /
+
+WORKDIR /directus/api
 
 EXPOSE 8055
 SHELL ["/bin/bash", "-c"]

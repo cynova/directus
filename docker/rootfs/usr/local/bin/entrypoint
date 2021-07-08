@@ -43,7 +43,7 @@ WARN
     fi
   fi
 
-  npx directus bootstrap
+  node cli.js bootstrap
 }
 
 command=""
@@ -61,4 +61,4 @@ else
 fi
 
 bootstrap
-exec npx directus "${command}" $@
+exec node cli.js "${command}" $@
