@@ -21,7 +21,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: '**/dist'
-          key: build-artifacts-${{ github.ref }}
+          key: build-artifacts-${{ github.hash }}
   build:
     runs-on: ubuntu-latest
     needs: lerna
@@ -31,7 +31,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: '**/dist'
-          key: build-artifacts-${{ github.ref }}
+          key: build-artifacts-${{ github.hash }}
 
       - name: Docker meta
         id: meta
