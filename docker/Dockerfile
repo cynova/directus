@@ -1,29 +1,21 @@
 # Builder image
-FROM alpine:latest AS builder
+FROM node:alpine AS builder
 
 ARG VERSION
 ARG REPOSITORY=directus/directus
 
-# Get runtime dependencies from optional dependencies
-# defined in package.json of Directus API package
+
 WORKDIR /directus
 
-COPY ./api/package.json directus-api-package.json
+RUN npm i -g lerna
+RUN npm i -g typescript
+COPY docker/pack.js .
 
-RUN apk add --no-cache jq \
-  && jq '{ \
-  name: "directus-project", \
-  version: "1.0.0", \
-  description: "Directus Project", \
-  "workspaces": [ \
-		"./app", \
-		"./api", \
-		"./docs", \
-		"./packages/*" \
-	], \
-  dependencies: .optionalDependencies \
-  }' \
-  directus-api-package.json > package.json
+COPY / .
+
+RUN node pack
+
+RUN npm i
 
 # Directus image
 FROM node:16-alpine
@@ -84,13 +76,8 @@ USER node
 WORKDIR /directus
 
 # Get package.json from builder image
-#COPY --chown=node:node package*.json ./
-COPY --chown=node:node lerna.json ./
-COPY --chown=node:node /api ./api
-COPY --chown=node:node /app ./app
-COPY --chown=node:node /packages ./packages
-COPY --chown=node:node /docs ./docs
 COPY --from=builder --chown=node:node /directus/package.json .
+COPY --from=builder --chown=node:node /directus/node_modules ./node_modules
 
 #RUN cd src && npx lerna link
 
@@ -110,9 +97,7 @@ RUN \
     extensions/interfaces \
     extensions/layouts \
     extensions/modules \
-    uploads && \
-  npm install --only=production && \
-  npx --yes lerna link
+    uploads
 # Expose data directories as volumes
 VOLUME \
   /directus/database \
@@ -121,8 +106,6 @@ VOLUME \
 
 # Copy rootfs files
 COPY ./docker/rootfs /
-
-WORKDIR /directus/api
 
 EXPOSE 8055
 SHELL ["/bin/bash", "-c"]
