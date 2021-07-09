@@ -3,7 +3,7 @@ name: build-images
 on: push
 
 env:
-  GHCR_IMAGE: cynova/directus
+  GHCR_IMAGE: ghcr.io/cynova/directus
 
 jobs:
   lerna:
