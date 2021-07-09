@@ -1,22 +1,3 @@
-# Builder image
-FROM node:alpine AS builder
-
-ARG VERSION
-ARG REPOSITORY=directus/directus
-
-
-WORKDIR /directus
-
-RUN npm i -g lerna
-RUN npm i -g typescript
-COPY docker/pack.js .
-
-COPY / .
-
-RUN node pack
-
-RUN npm i
-
 # Directus image
 FROM node:16-alpine
 
@@ -76,8 +57,7 @@ USER node
 WORKDIR /directus
 
 # Get package.json from builder image
-COPY --from=builder --chown=node:node /directus/package.json .
-COPY --from=builder --chown=node:node /directus/node_modules ./node_modules
+COPY --chown=node:node /dist .
 
 #RUN cd src && npx lerna link
 
@@ -91,6 +71,7 @@ RUN \
   #npm i \
   #npm i nanoid \
   # Create data directories
+  npm i --only=production && \
   mkdir -p \
     database \
     extensions/displays \

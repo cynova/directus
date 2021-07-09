@@ -11,9 +11,11 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '16.x'
-      - run: |
-          npm ci
-          npm run build
+
+      - uses: c-hive/gha-npm-cache@v1
+      - run: npm ci
+      - run: npm run build
+      - run: node docker/pack
 
       - name: Cache build artifacts
         uses: actions/cache@v2
