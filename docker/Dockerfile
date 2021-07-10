@@ -1,3 +1,10 @@
+FROM node:16-alpine as builder
+
+WORKDIR /directus
+COPY /dist .
+RUN npm i -g yargs pino pino-colada
+RUN npm i --only=production
+
 # Directus image
 FROM node:16-alpine
 
@@ -43,11 +50,6 @@ RUN \
   bash \
   ssmtp \
   util-linux \
-  # Install global node dependencies
-  && npm install -g \
-  yargs \
-  pino \
-  pino-colada \
   # Create directory for Directus with corresponding ownership
   # (can be omitted on newer Docker versions since WORKDIR below will do the same)
   && mkdir /directus && chown node:node /directus
@@ -56,22 +58,11 @@ RUN \
 USER node
 WORKDIR /directus
 
-# Get package.json from builder image
-COPY --chown=node:node /dist .
-
-#RUN cd src && npx lerna link
-
-#COPY --chown=node:node /api/dist ./node_modules/directus
-#COPY --chown=node:node /api/node_modules_nolinks ./node_modules/directus/node_modules
-#COPY --chown=node:node /api/package.json ./node_modules/directus/package.json
+COPY --from=builder --chown=node:node /directus .
+COPY --from=builder --chown=node:node /usr/local/lib/node_modules /usr/local/lib/node_modules
 
 RUN \
-  # Install Directus and runtime dependencies
-  # (retry if it fails for some reason, e.g. release not published yet)
-  #npm i \
-  #npm i nanoid \
   # Create data directories
-  npm i --only=production && \
   mkdir -p \
     database \
     extensions/displays \
