@@ -1,11 +1,33 @@
 name: build-images
 
-on: push
+on:
+  push:
+    tags:
+      - 'v*'
 
 env:
   GHCR_IMAGE: ghcr.io/cynova/directus
 
 jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          body: |
+            Directus ${{ github.ref }}
+          draft: false
+          prerelease: false
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -29,6 +51,7 @@ jobs:
   publish-npm:
     runs-on: ubuntu-latest
     needs: build
+    if: ${{ env.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v2
       - name: Restore build artifacts
