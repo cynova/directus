@@ -2,7 +2,7 @@ FROM node:16-alpine as builder
 
 WORKDIR /directus
 COPY /dist .
-RUN npm i -g yargs pino pino-colada
+#RUN npm i -g yargs pino pino-colada
 RUN npm i --only=production
 
 # Directus image
@@ -59,7 +59,7 @@ USER node
 WORKDIR /directus
 
 COPY --from=builder --chown=node:node /directus .
-COPY --from=builder --chown=node:node /usr/local/lib/node_modules /usr/local/lib/node_modules
+#COPY --from=builder --chown=node:node /usr/local/lib/node_modules /usr/local/lib/node_modules
 
 RUN \
   # Create data directories
@@ -76,9 +76,5 @@ VOLUME \
   /directus/extensions \
   /directus/uploads
 
-# Copy rootfs files
-COPY ./docker/rootfs /
-
 EXPOSE 8055
-SHELL ["/bin/bash", "-c"]
-ENTRYPOINT ["entrypoint"]
+CMD npx directus bootstrap && npx directus start
