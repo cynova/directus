@@ -23,3 +23,9 @@ If you want to publish your fork to hub.docker.com or NPM you need to have an ac
 | `NPM_TOKEN`          | Your NPM token. Make sure to use the type "automation". | `12345678-...` |
 | `DOCKERHUB_USERNAME` | Dockerhub Username                                      | `directus`     |
 | `DOCKERHUB_TOKEN`    | Dockerhub Password                                      | `hunter2`      |
+
+## 2. Create a release
+
+```bash
+npm run release
+```

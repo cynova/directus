@@ -64,7 +64,7 @@ jobs:
         with:
           node-version: '16.x'
 
-      - run: npx lerna publish from-git --yes
+      - run: npx lerna publish --force-publish --exact from-git --yes
 
   build-images:
     runs-on: ubuntu-latest
