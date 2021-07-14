@@ -1,17 +1,9 @@
 {
-	"packages": [
-		"packages/*",
-		"app",
-		"docs",
-		"api"
-	],
+	"packages": ["api"],
 	"version": "9.1.5",
 	"command": {
 		"bootstrap": {
-			"npmClientArgs": [
-				"--no-package-lock",
-				"--legacy-peer-deps"
-			]
+			"npmClientArgs": ["--no-package-lock", "--legacy-peer-deps"]
 		}
 	}
 }
