@@ -26,7 +26,7 @@ import fse from 'fs-extra';
 import { getSchema } from './utils/get-schema';
 
 import * as services from './services';
-import { schedule, validate } from 'node-cron';
+import { schedule, ScheduledTask, validate } from 'node-cron';
 import { rollup } from 'rollup';
 // @TODO Remove this once a new version of @rollup/plugin-virtual has been released
 // @ts-expect-error
@@ -34,6 +34,7 @@ import virtual from '@rollup/plugin-virtual';
 import alias from '@rollup/plugin-alias';
 import { Url } from './utils/url';
 import getModuleDefault from './utils/get-module-default';
+import chokidar from 'chokidar';
 
 let extensions: Extension[] = [];
 let extensionBundles: Partial<Record<AppExtensionType, string>> = {};
@@ -140,9 +141,24 @@ async function getSharedDepsMapping(deps: string[]) {
 }
 
 function registerHooks(hooks: Extension[]) {
+	const registeredHooks: [string, () => void][] = [];
+	const registeredCronTasks: ScheduledTask[] = [];
+
 	for (const hook of hooks) {
 		try {
 			registerHook(hook);
+			if (process.env.NODE_ENV === 'development' && hook.source) {
+				const watcher = chokidar.watch(path.resolve(hook.path, hook.source));
+				watcher.on('change', () => {
+					try {
+						registerHook(hook);
+						logger.info(`Reloaded hook "${hook.name}"`);
+					} catch (error: any) {
+						logger.warn(`Couldn't reload hook "${hook.name}"`);
+						logger.warn(error);
+					}
+				});
+			}
 		} catch (error: any) {
 			logger.warn(`Couldn't register hook "${hook.name}"`);
 			logger.warn(error);
@@ -150,12 +166,24 @@ function registerHooks(hooks: Extension[]) {
 	}
 
 	function registerHook(hook: Extension) {
-		const hookPath = path.resolve(hook.path, hook.entrypoint || '');
+		const hookPath = path.resolve(
+			hook.path,
+			(process.env.NODE_ENV === 'development' ? hook.source : hook.entrypoint) || ''
+		);
+		delete require.cache[require.resolve(hookPath)];
 		const hookInstance: HookConfig | { default: HookConfig } = require(hookPath);
 
 		const register = getModuleDefault(hookInstance);
 
 		const events = register({ services, exceptions, env, database: getDatabase(), logger, getSchema });
+
+		let item;
+		while ((item = registeredHooks.pop())) {
+			emitter.off(item[0], item[1]);
+		}
+		while ((item = registeredCronTasks.pop())) {
+			item.destroy();
+		}
 
 		for (const [event, handler] of Object.entries(events)) {
 			if (event.startsWith('cron(')) {
@@ -164,19 +192,43 @@ function registerHooks(hooks: Extension[]) {
 				if (!cron || validate(cron) === false) {
 					logger.warn(`Couldn't register cron hook. Provided cron is invalid: ${cron}`);
 				} else {
-					schedule(cron, handler);
+					const task = schedule(cron, handler);
+					registeredCronTasks.push(task);
 				}
 			} else {
 				emitter.on(event, handler);
+				registeredHooks.push([event, handler]);
 			}
 		}
 	}
+}
+
+const scopedRouters: { [key: string]: Router } = {};
+function registerScopedRouter(scope: string, router: Router, scopedRouter: Router) {
+	if (!scopedRouters[scope]) {
+		router.use(scope, (req, res, next) => {
+			scopedRouters[scope](req, res, next);
+		});
+	}
+	scopedRouters[scope] = scopedRouter;
 }
 
 function registerEndpoints(endpoints: Extension[], router: Router) {
 	for (const endpoint of endpoints) {
 		try {
 			registerEndpoint(endpoint);
+			if (process.env.NODE_ENV === 'development' && endpoint.source) {
+				const watcher = chokidar.watch(path.resolve(endpoint.path, endpoint.source));
+				watcher.on('change', () => {
+					try {
+						registerEndpoint(endpoint);
+						logger.info(`Reloaded endpoint "${endpoint.name}"`);
+					} catch (error: any) {
+						logger.warn(`Couldn't reload endpoint "${endpoint.name}"`);
+						logger.warn(error);
+					}
+				});
+			}
 		} catch (error: any) {
 			logger.warn(`Couldn't register endpoint "${endpoint.name}"`);
 			logger.warn(error);
@@ -184,7 +236,11 @@ function registerEndpoints(endpoints: Extension[], router: Router) {
 	}
 
 	function registerEndpoint(endpoint: Extension) {
-		const endpointPath = path.resolve(endpoint.path, endpoint.entrypoint || '');
+		const endpointPath = path.resolve(
+			endpoint.path,
+			(process.env.NODE_ENV === 'development' ? endpoint.source : endpoint.entrypoint) || ''
+		);
+		delete require.cache[require.resolve(endpointPath)];
 		const endpointInstance: EndpointConfig | { default: EndpointConfig } = require(endpointPath);
 
 		const mod = getModuleDefault(endpointInstance);
@@ -193,7 +249,7 @@ function registerEndpoints(endpoints: Extension[], router: Router) {
 		const pathName = typeof mod === 'function' ? endpoint.name : mod.id;
 
 		const scopedRouter = express.Router();
-		router.use(`/${pathName}`, scopedRouter);
+		registerScopedRouter(`/${pathName}`, router, scopedRouter);
 
 		register(scopedRouter, { services, exceptions, env, database: getDatabase(), logger, getSchema });
 	}

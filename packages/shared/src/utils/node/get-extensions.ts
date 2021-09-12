@@ -78,15 +78,20 @@ export async function getLocalExtensions(root: string, types: readonly Extension
 
 		try {
 			const extensionNames = await listFolders(typePath);
-
 			for (const extensionName of extensionNames) {
 				const extensionPath = path.join(typePath, extensionName);
+				const extensionManifest: ExtensionManifestRaw = await fse.readJSON(path.join(extensionPath, 'package.json'));
+
+				if (!validateExtensionManifest(extensionManifest)) {
+					throw new Error(`The extension manifest of "${extensionName}" is not valid.`);
+				}
 
 				extensions.push({
 					path: extensionPath,
 					name: extensionName,
 					type: extensionType,
-					entrypoint: 'index.js',
+					entrypoint: extensionManifest[EXTENSION_PKG_KEY].path,
+					source: extensionManifest[EXTENSION_PKG_KEY].source,
 					local: true,
 					root: true,
 				});

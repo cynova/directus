@@ -15,7 +15,16 @@ export async function registerInterfaces(app: App): Promise<void> {
 			? await import('@directus-extensions-interface')
 			: await import(/* @vite-ignore */ `${getRootPath()}extensions/interfaces/index.js`);
 
-		interfaces.push(...customInterfaces.default);
+		if (import.meta.env.DEV) {
+			const customInterfaceModules = import.meta.globEager('../../../api/extensions/interfaces/*/src/index.js');
+			const customInterfaces: InterfaceConfig[] = Object.values(customInterfaceModules).map((module) => module.default);
+			interfaces.push(...customInterfaces);
+		} else {
+			const customInterfaces: { default: InterfaceConfig[] } = await import(
+				/* @vite-ignore */ `${getRootPath()}extensions/interfaces/index.js`
+			);
+			interfaces.push(...customInterfaces.default);
+		}
 	} catch (err: any) {
 		// eslint-disable-next-line no-console
 		console.warn(`Couldn't load custom interfaces`);

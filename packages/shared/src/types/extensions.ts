@@ -28,6 +28,7 @@ export type Extension = {
 	entrypoint?: string;
 	host?: string;
 	children?: string[];
+	source?: string;
 
 	local: boolean;
 	root: boolean;
