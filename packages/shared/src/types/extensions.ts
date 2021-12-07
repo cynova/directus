@@ -28,6 +28,8 @@ export type Extension = {
 
 	type: ExtensionPackageType;
 	entrypoint?: string;
+	source?: string;
+	dist?: string;
 	host?: string;
 	children?: string[];
 

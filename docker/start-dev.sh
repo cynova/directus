@@ -1,0 +1,1 @@
+docker run -e MYSQL_DATABASE=directus -e MYSQL_USER=directus -e MYSQL_PASSWORD=directus -e MYSQL_ROOT_PASSWORD=directus -v /Users/sean/development/cynova/jumpfit/volumes/mariadb/:/var/lib/mysql -p 3306:3306 mariadb

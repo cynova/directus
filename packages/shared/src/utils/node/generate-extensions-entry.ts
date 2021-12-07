@@ -8,7 +8,7 @@ export function generateExtensionsEntry(type: AppExtensionType, extensions: Exte
 		.map(
 			(extension, i) =>
 				`import e${i} from './${path
-					.relative('.', path.resolve(extension.path, extension.entrypoint || ''))
+					.relative('.', path.resolve(extension.path, extension.source || ''))
 					.split(path.sep)
 					.join(path.posix.sep)}';\n`
 		)

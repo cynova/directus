@@ -35,6 +35,12 @@ import virtual from '@rollup/plugin-virtual';
 import alias from '@rollup/plugin-alias';
 import { Url } from './utils/url';
 import getModuleDefault from './utils/get-module-default';
+import chokidar from 'chokidar';
+
+const watcher = chokidar.watch([]);
+watcher.on('change', () => {
+	getExtensionManager().reload();
+});
 
 let extensionManager: ExtensionManager | undefined;
 
@@ -219,8 +225,10 @@ class ExtensionManager {
 	}
 
 	private registerHook(hook: Extension) {
-		const hookPath = path.resolve(hook.path, hook.entrypoint || '');
+		const hookPath = path.resolve(hook.path, hook.dist || '');
+		delete require.cache[require.resolve(hookPath)];
 		const hookInstance: HookConfig | { default: HookConfig } = require(hookPath);
+		watcher.add(hookPath);
 
 		const register = getModuleDefault(hookInstance);
 
@@ -289,8 +297,10 @@ class ExtensionManager {
 	}
 
 	private registerEndpoint(endpoint: Extension, router: Router) {
-		const endpointPath = path.resolve(endpoint.path, endpoint.entrypoint || '');
+		const endpointPath = path.resolve(endpoint.path, endpoint.dist || '');
+		delete require.cache[require.resolve(endpointPath)];
 		const endpointInstance: EndpointConfig | { default: EndpointConfig } = require(endpointPath);
+		watcher.add(endpointPath);
 
 		const mod = getModuleDefault(endpointInstance);
 

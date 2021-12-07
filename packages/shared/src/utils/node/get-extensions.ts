@@ -85,6 +85,8 @@ export async function getLocalExtensions(root: string, types: readonly Extension
 					name: extensionName,
 					type: extensionType,
 					entrypoint: 'index.js',
+					source: 'src/index.js',
+					dist: 'dist/index.js',
 					local: true,
 				});
 			}
