@@ -405,6 +405,11 @@ export class ItemsService<Item extends AnyItem = AnyItem> implements AbstractSer
 			queryWithKey.limit = keys.length;
 		}
 
+		let removePrimaryKeyField = false;
+		if (!query.sort && query.fields && !query.fields.includes('*') && !query.fields.includes(primaryKeyField)) {
+			query.fields.push(primaryKeyField);
+			removePrimaryKeyField = true;
+		}
 		const results = await this.readByQuery(queryWithKey, opts);
 		if (!query.sort) {
 			const pkMap = new Map();
@@ -412,6 +417,9 @@ export class ItemsService<Item extends AnyItem = AnyItem> implements AbstractSer
 				pkMap.set(key, index);
 			});
 			results.sort((a, b) => pkMap.get(a[primaryKeyField]) - pkMap.get(b[primaryKeyField]));
+			if (removePrimaryKeyField) {
+				results.forEach((result) => delete result[primaryKeyField]);
+			}
 		}
 
 		return results;
